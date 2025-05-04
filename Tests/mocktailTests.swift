@@ -3,19 +3,46 @@
 import XCTest
 
 struct Parser {
-    let resources: [String]
+    let resources: [String: [Int]]
     func parse(_ request: Request) -> Response {
         guard request.headers.contains("Host") else {
             return Response(statusCode: 400)
         }
         
-        guard let resource = request.headers.components(separatedBy: " ").get(at: 1) else {
+        guard let collectionName = request.collectionName() else {
             return Response(statusCode: 400)
         }
         
-        let resourceMainPath = resource.components(separatedBy: "/").dropFirst().first
+        guard let id = request.id() else {
+            return Response(statusCode: collectionExists(collectionName) ? 400 : 404)
+        }
         
-        return Response(statusCode: resources.contains(resourceMainPath ?? "") ? 400 : 404)
+        guard let id = Int(id) else { return Response(statusCode: 400) }
+        let items = resources[collectionName] ?? []
+        
+        return Response(statusCode: items.contains(id) ? 400 : 404)
+    }
+    
+    private func collectionExists(_ collectionName: String) -> Bool {
+        resources.map(\.key).contains(collectionName)
+    }
+}
+
+private extension Request {
+    func url() -> String? {
+        headers.components(separatedBy: " ").get(at: 1)
+    }
+    
+    func urlComponents() -> [String] {
+       Array(url()?.components(separatedBy: "/").dropFirst() ?? [])
+    }
+    
+    func id() -> String? {
+        urlComponents().get(at: 1)
+    }
+    
+    func collectionName() -> String? {
+        urlComponents().first
     }
 }
 
@@ -55,7 +82,7 @@ final class Tests: XCTestCase {
         XCTAssertEqual(response.statusCode, 400)
     }
     
-    func test_parser_delivers404OnNonExistentResource() {
+    func test_parser_delivers404OnNonExistentCollection() {
         let sut = makeSUT()
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
@@ -63,16 +90,23 @@ final class Tests: XCTestCase {
     }
     
     func test_parser_delivers400OnMalformedId() {
-        let sut = makeSUT(resources: ["recipes"])
+        let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes/abc HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 400)
+    }
+    
+    func test_parser_delivers404OnNonExistentResource() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "GET /recipes/2 HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 404)
     }
 }
 
 // MARK: - Helpers
 private extension Tests {
-    func makeSUT(resources: [String] = []) -> Parser {
+    func makeSUT(resources: [String: [Int]] = [:]) -> Parser {
         Parser(resources: resources)
     }
 }
