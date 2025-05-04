@@ -13,22 +13,27 @@ struct Parser {
             return Response(statusCode: 405)
         }
         
-        guard request.urlComponents().count == 2 else {
-            return Response(statusCode: 404)
-        }
-        
         guard let collectionName = request.collectionName() else {
             return Response(statusCode: 400)
         }
         
-        guard let id = request.id() else {
-            return Response(statusCode: collectionExists(collectionName) ? 400 : 404)
+        if request.urlComponents().count == 1 {
+            return Response(statusCode: collectionExists(collectionName) ? 200 : 404)
+        } else {
+            
+            guard request.urlComponents().count == 2 else {
+                return Response(statusCode: 404)
+            }
+            
+            guard let id = request.id() else {
+                return Response(statusCode: collectionExists(collectionName) ? 200 : 404)
+            }
+            
+            guard let id = Int(id) else { return Response(statusCode: 400) }
+            let items = resources[collectionName] ?? []
+            
+            return Response(statusCode: items.contains(id) ? 400 : 404)
         }
-        
-        guard let id = Int(id) else { return Response(statusCode: 400) }
-        let items = resources[collectionName] ?? []
-        
-        return Response(statusCode: items.contains(id) ? 400 : 404)
     }
     
     private func collectionExists(_ collectionName: String) -> Bool {
@@ -127,6 +132,13 @@ final class Tests: XCTestCase {
         let request = Request(headers: "POST /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 405)
+    }
+    
+    func test_parser_delivers200OnExistingCollection() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 200)
     }
 }
 
