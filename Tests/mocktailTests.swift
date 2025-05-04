@@ -17,33 +17,30 @@ struct Parser {
             return Response(statusCode: 400)
         }
         
-        if request.urlComponents().count == 1 {
+        switch request.type() {
+        case .allResources:
             return Response(statusCode: collectionExists(collectionName) ? 200 : 404)
-        } else {
-            
-            guard request.urlComponents().count == 2 else {
-                return Response(statusCode: 404)
-            }
-            
-            guard let id = request.id() else {
-                return Response(statusCode: collectionExists(collectionName) ? 200 : 404)
-            }
-            
+        case .singleResource(let id):
             guard let id = Int(id) else { return Response(statusCode: 400) }
             let items = resources[collectionName] ?? []
-            
             return Response(statusCode: items.contains(id) ? 400 : 404)
+        case .subroute:
+            return Response(statusCode: 404)
         }
     }
     
     private func collectionExists(_ collectionName: String) -> Bool {
-        resources.map(\.key).contains(collectionName)
+        resources.keys.contains(collectionName)
     }
 }
 
 private extension Request {
     func url() -> String? {
-        headers.components(separatedBy: " ").get(at: 1)
+        requestHeaders().first?.components(separatedBy: " ").get(at: 1)
+    }
+    
+    func requestHeaders() -> [String] {
+        headers.components(separatedBy: "\n")
     }
     
     func urlComponents() -> [String] {
@@ -59,7 +56,29 @@ private extension Request {
     }
     
     func method() -> String? {
-        headers.components(separatedBy: "\n").first?.components(separatedBy: " ").first
+        requestHeaders().first?.components(separatedBy: " ").first
+    }
+    
+    func allItems() -> Bool {
+        urlComponents().count == 1
+    }
+    
+    enum RequestType {
+        case allResources
+        case singleResource(id: String)
+        case subroute
+        
+        init(_ urlComponents: [String]) {
+            switch urlComponents.count {
+            case 1: self = .allResources
+            case 2: self = .singleResource(id: urlComponents[1])
+            default: self = .subroute
+            }
+        }
+    }
+    
+    func type() -> RequestType {
+        RequestType(urlComponents())
     }
 }
 
