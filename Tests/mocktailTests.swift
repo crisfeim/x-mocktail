@@ -9,11 +9,13 @@ struct Parser {
             return Response(statusCode: 400)
         }
         
-        guard let _ = request.headers.components(separatedBy: " ").get(at: 2) else {
+        guard let resource = request.headers.components(separatedBy: " ").get(at: 1) else {
             return Response(statusCode: 400)
         }
         
-        return Response(statusCode: 404)
+        let resourceMainPath = resource.components(separatedBy: "/").dropFirst().first
+        
+        return Response(statusCode: resources.contains(resourceMainPath ?? "") ? 400 : 404)
     }
 }
 
@@ -58,6 +60,13 @@ final class Tests: XCTestCase {
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 404)
+    }
+    
+    func test_parser_delivers400OnMalformedId() {
+        let sut = makeSUT(resources: ["recipes"])
+        let request = Request(headers: "GET /recipes/abc HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 400)
     }
 }
 
