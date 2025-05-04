@@ -23,4 +23,11 @@ final class Tests: XCTestCase {
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 400)
     }
+    
+    func test_parser_delivers400OnMalformedHeaders() {
+        let sut = Parser()
+        let request = Request(headers: "GETHTTP/1.1")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 400)
+    }
 }
