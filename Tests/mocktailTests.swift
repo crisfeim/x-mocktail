@@ -190,6 +190,13 @@ final class Tests: XCTestCase {
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 200)
     }
+    
+    func test_parser_delivers400OnMalformedURL() {
+        let sut = makeSUT(resources: ["recipes": [1, 2]])
+        let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 400)
+    }
 }
 
 // MARK: - Helpers
