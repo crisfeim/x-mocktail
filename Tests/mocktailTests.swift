@@ -35,8 +35,11 @@ struct Parser {
 }
 
 private extension Request {
-    func url() -> String? {
-        requestHeaders().first?.components(separatedBy: " ").get(at: 1)
+    func normalizedURL() -> String? {
+        requestHeaders().first?
+            .components(separatedBy: " ")
+            .get(at: 1)?
+            .trimInitialAndLastSlashes()
     }
     
     func requestHeaders() -> [String] {
@@ -44,7 +47,7 @@ private extension Request {
     }
     
     func urlComponents() -> [String] {
-       Array(url()?.components(separatedBy: "/").dropFirst() ?? [])
+       Array(normalizedURL()?.components(separatedBy: "/") ?? [])
     }
     
     func id() -> String? {
@@ -79,6 +82,20 @@ private extension Request {
     
     func type() -> RequestType {
         RequestType(urlComponents())
+    }
+}
+
+private extension String {
+    func trimInitialAndLastSlashes() -> String {
+        var copy = self
+        if copy.first == "/" {
+            copy.removeFirst()
+        }
+        if copy.last == "/" {
+            copy.removeLast()
+        }
+        
+        return copy
     }
 }
 
@@ -163,6 +180,13 @@ final class Tests: XCTestCase {
     func test_parser_delivers200OnExistingResource() {
         let sut = makeSUT(resources: ["recipes": [1]])
         let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 200)
+    }
+    
+    func test_parser_delivers200OnExistingCollectionWithaTrailingSlash() {
+        let sut = makeSUT(resources: ["recipes": [1, 2]])
+        let request = Request(headers: "GET /recipes/ HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 200)
     }
