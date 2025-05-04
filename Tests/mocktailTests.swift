@@ -5,6 +5,10 @@ import XCTest
 struct Parser {
     let resources: [String]
     func parse(_ request: Request) -> Response {
+        guard request.headers.contains("Host") else {
+            return Response(statusCode: 400)
+        }
+        
         guard let _ = request.headers.components(separatedBy: " ").get(at: 2) else {
             return Response(statusCode: 400)
         }
@@ -42,9 +46,16 @@ final class Tests: XCTestCase {
         XCTAssertEqual(response.statusCode, 400)
     }
     
-    func test_parser_delivers404OnNonExistentResource() {
+    func test_parser_delivers400OnMissingHostHeader() {
         let sut = makeSUT()
         let request = Request(headers: "GET /recipes HTTP/1.1")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 400)
+    }
+    
+    func test_parser_delivers404OnNonExistentResource() {
+        let sut = makeSUT()
+        let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 404)
     }
