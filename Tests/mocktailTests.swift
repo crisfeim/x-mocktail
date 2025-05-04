@@ -9,6 +9,10 @@ struct Parser {
             return Response(statusCode: 400)
         }
         
+        guard request.method() == "GET" else {
+            return Response(statusCode: 405)
+        }
+        
         guard request.urlComponents().count == 2 else {
             return Response(statusCode: 404)
         }
@@ -47,6 +51,10 @@ private extension Request {
     
     func collectionName() -> String? {
         urlComponents().first
+    }
+    
+    func method() -> String? {
+        headers.components(separatedBy: "\n").first?.components(separatedBy: " ").first
     }
 }
 
@@ -112,6 +120,13 @@ final class Tests: XCTestCase {
         let request = Request(headers: "GET /recipes/1/helloworld HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 404)
+    }
+    
+    func test_parser_delivers405OnUnsupportedMethod() {
+        let sut = makeSUT()
+        let request = Request(headers: "POST /recipes HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 405)
     }
 }
 
