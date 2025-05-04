@@ -9,6 +9,10 @@ struct Parser {
             return Response(statusCode: 400)
         }
         
+        guard request.urlComponents().count == 2 else {
+            return Response(statusCode: 404)
+        }
+        
         guard let collectionName = request.collectionName() else {
             return Response(statusCode: 400)
         }
@@ -99,6 +103,13 @@ final class Tests: XCTestCase {
     func test_parser_delivers404OnNonExistentResource() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes/2 HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 404)
+    }
+    
+    func test_parser_delivers404OnUnknownSubroute() {
+        let sut = makeSUT(resources: ["recipes": [1]])
+        let request = Request(headers: "GET /recipes/1/helloworld HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 404)
     }
