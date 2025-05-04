@@ -23,7 +23,7 @@ struct Parser {
         case .singleResource(let id):
             guard let id = Int(id) else { return Response(statusCode: 400) }
             let items = resources[collectionName] ?? []
-            return Response(statusCode: items.contains(id) ? 400 : 404)
+            return Response(statusCode: items.contains(id) ? 200 : 404)
         case .subroute:
             return Response(statusCode: 404)
         }
@@ -156,6 +156,13 @@ final class Tests: XCTestCase {
     func test_parser_delivers200OnExistingCollection() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        XCTAssertEqual(response.statusCode, 200)
+    }
+    
+    func test_parser_delivers200OnExistingResource() {
+        let sut = makeSUT(resources: ["recipes": [1]])
+        let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 200)
     }
