@@ -370,7 +370,10 @@ extension Tests {
     
     func test_parse_delivers404OnPATCHNonExistentResource() {
         let sut = makeSUT(collections: ["recipes": []])
-        let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json")
+        let request = Request(
+            headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json",
+            body: #"{"title":"new-title"}"#
+        )
         let response = sut.parse(request)
         expectNoDifference(response, Response(statusCode: 404))
     }

@@ -3,6 +3,10 @@
 
 import Foundation
 
+extension Response {
+    nonisolated(unsafe) static public let badRequest = Response(statusCode: 400)
+}
+
 public extension Response {
     init(
         statusCode: Int,

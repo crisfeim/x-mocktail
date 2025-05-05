@@ -3,45 +3,35 @@
 
 import Foundation
 
+enum StatusCode {
+    static let notFound = 404
+    static let badRequest = 400
+    static let unsupportedMethod = 405
+    static let missingOrWrongMediaType = 415
+}
+
 struct HeadersValidator {
-    
-    enum ValidationError: Int, Swift.Error {
-        case notFound = 404
-        case badRequest = 400
-        case unsupportedMethod = 405
-        case missingOrWrongMediaType = 415
-    }
     
     let request: Request
     let collections: [String: JSON]
     
-    typealias Result = ValidationError?
+    typealias Result = Int?
     
     var result: Result {
-        guard request.headers.contains("Host"), let collectionName = request.collectionName()  else {
-            return .badRequest
+        guard request.headers.contains("Host")  else {
+            return StatusCode.badRequest
         }
         
         guard let _ = request.method() else {
-            return .unsupportedMethod
+            return StatusCode.unsupportedMethod
         }
         
         if request.payloadRequiredRequest() {
             guard let contentType = request.contentType(), contentType == "application/json" else {
-                return .missingOrWrongMediaType
+                return StatusCode.missingOrWrongMediaType
             }
         }
-        
-        if [Request.HTTPVerb.DELETE, .PATCH].contains(request.method()) {
-            
-            guard let id = request.route().id else {
-                return .badRequest
-            }
-               guard let _ = getItem(withId: id, on: collectionName, collections: collections) else {
-             return .notFound
-         }
-        }
-        
+
         return nil
     }
     

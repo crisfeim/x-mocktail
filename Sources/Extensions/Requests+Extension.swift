@@ -31,9 +31,18 @@ extension Request {
         payloadAsJSONItem()?.keys.contains("id") ?? false
     }
     
+    func payloadIsInvalidOrEmptyJSON() -> Bool {
+        !payloadIsValidNonEmptyJSON()
+    }
+    
     func payloadIsValidNonEmptyJSON() -> Bool {
         JSONUtils.isValidNonEmptyJSON(body)
     }
+    
+    func urlHasNotId() -> Bool {
+        route().id == nil
+    }
+
     
     func collectionName() -> String? {
         urlComponents().first

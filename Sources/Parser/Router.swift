@@ -9,15 +9,18 @@ struct Router {
     func handleRequest() -> Response {
         switch request.method() {
         case
-                .PUT   where !request.payloadIsValidNonEmptyJSON(),
-                .POST  where !request.payloadIsValidNonEmptyJSON(),
-                .PATCH where !request.payloadIsValidNonEmptyJSON(),
+                .PUT   where request.payloadIsInvalidOrEmptyJSON(),
+                .POST  where request.payloadIsInvalidOrEmptyJSON(),
+                .PATCH where request.payloadIsInvalidOrEmptyJSON(),
             
                 .PUT   where request.payloadJSONHasID(),
                 .POST  where request.payloadJSONHasID(),
-                .PATCH where request.payloadJSONHasID():
+                .PATCH where request.payloadJSONHasID(),
             
-            return Response(statusCode: 400)
+                .DELETE where request.urlHasNotId(),
+                .PATCH  where request.urlHasNotId():
+            
+            return .badRequest
             
         case .GET   : return handleGET()
         case .DELETE: return handleDELETE()
@@ -50,14 +53,14 @@ struct Router {
                 contentLength: item?.contentLenght()
             )
             
-        default: return Response(statusCode: 400)
+        default: return .badRequest
         }
     }
     
     private func handleDELETE() -> Response {
         switch request.route() {
         case .collection, .nestedSubroute:
-            return Response(statusCode: 400)
+            return .badRequest
         case let .resource(id, collection) where !itemExists(id, collection):
             return Response(statusCode: 404)
         case .resource:
@@ -70,7 +73,7 @@ struct Router {
         case let .resource(id, collection) where !itemExists(id, collection):
             return Response(statusCode: 200)
         case .resource where request.body == nil:
-            return Response(statusCode: 400)
+            return .badRequest
         case .resource where request.payloadIsValidNonEmptyJSON():
             return Response(
                 statusCode: 200,
@@ -78,13 +81,13 @@ struct Router {
                 contentLength: request.body?.contentLenght()
             )
         default:
-            return Response(statusCode: 400)
+            return .badRequest
         }
     }
     
     private func handlePOST() -> Response {
         switch request.route() {
-        case .resource: return Response(statusCode: 400)
+        case .resource: return .badRequest
         case let .collection(name) where !collectionExists(name):
             return Response(statusCode: 404)
         case let .collection(name):
@@ -94,7 +97,7 @@ struct Router {
                 rawBody: jsonItem.flatMap(JSONUtils.jsonItemToString),
                 contentLength: jsonItem.flatMap(JSONUtils.jsonItemToString)?.contentLenght()
             )
-        default: return Response(statusCode: 400)
+        default: return .badRequest
         }
     }
     
@@ -119,7 +122,7 @@ struct Router {
                 contentLength: patched?.contentLenght()
             )
         default:
-            return Response(statusCode: 400)
+            return .badRequest
         }
     }
     
