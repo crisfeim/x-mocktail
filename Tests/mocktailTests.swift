@@ -462,16 +462,6 @@ final class Tests: XCTestCase {
         )
     }
     
-    private func nsDictionary(from jsonString: String) -> NSDictionary? {
-        guard
-            let responseJSON = try? JSONSerialization.jsonObject(with: Data(jsonString.utf8)),
-            let responseDict = responseJSON as? NSDictionary
-        else {
-            return nil
-        }
-        return responseDict
-    }
-    
     func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
@@ -494,5 +484,15 @@ private extension Tests {
     
     func anyNonJSONMediaType() -> String {
         "application/freestyle"
+    }
+    
+    func nsDictionary(from jsonString: String) -> NSDictionary? {
+        guard
+            let responseJSON = try? JSONSerialization.jsonObject(with: Data(jsonString.utf8)),
+            let responseDict = responseJSON as? NSDictionary
+        else {
+            return nil
+        }
+        return responseDict
     }
 }
