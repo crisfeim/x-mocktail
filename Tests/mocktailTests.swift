@@ -73,6 +73,9 @@ struct Parser {
     }
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
+        if let _ = request.body {
+            return Response(statusCode: 400)
+        }
         return Response(statusCode: 415)
     }
     
@@ -223,6 +226,12 @@ struct Response: Equatable {
 
 struct Request {
     let headers: String
+    let body: String?
+    
+    init(headers: String, body: String? = nil) {
+        self.headers = headers
+        self.body = body
+    }
 }
 
 final class Tests: XCTestCase {
@@ -382,6 +391,19 @@ final class Tests: XCTestCase {
         let request = Request(headers: "POST /recipes Content-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 415)
+        
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers400OnInvalidJSONBody() {
+        let sut = makeSUT()
+        let request = Request(
+            headers: "POST /recipes Content-Type: application/json\nHost: localhost",
+            body: "invalid json"
+        )
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 400)
         
         expectNoDifference(response, expectedResponse)
     }
