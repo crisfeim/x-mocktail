@@ -150,6 +150,15 @@ extension Parser {
               let patch = try? JSONSerialization.jsonObject(with: patchData, options: []) as? JSONItem, !patch.isEmpty else {
             return Response(statusCode: 400)
         }
+        
+        if let bodyId = jsonItem(from: patchBody)?["id"] as? Int {
+            if bodyId == id {
+                return Response(statusCode: 200, rawBody: patchBody)
+            }
+            else {
+                return Response(statusCode: 400)
+            }
+        }
 
         for (key, value) in patch {
             existingItem[key] = value

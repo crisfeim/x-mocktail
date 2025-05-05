@@ -442,6 +442,21 @@ extension Tests {
         let expectedResponse = Response(statusCode: 404)
         expectNoDifference(response, expectedResponse)
     }
+    
+    func test_parse_delivers400OnPATCHWithJSONBodyWithDifferentItemId() {
+        let item1: JSONItem = ["id": 1, "title": "KFC Chicken"]
+        let item2: JSONItem = ["id": 2, "title": "Sushi rolls"]
+        let sut = makeSUT(resources: ["recipes": [item1, item2]])
+        let request = Request(
+            headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
+            body: #"{"id":2,"title":"Fried chicken"}"#
+        )
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 400)
+        
+        expectNoDifference(response, expectedResponse)
+    }
 
 
     func test_parse_delivers200OnPATCHWithValidJSONBody() throws {
