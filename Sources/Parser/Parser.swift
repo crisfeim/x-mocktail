@@ -25,7 +25,6 @@ public struct Parser {
                 let collectionName = request.collectionName()!
                 switch request.method() {
                 case .POST  : return handlePOST(request, on: collectionName)
-                case .PUT   : return handlePUT(request, on: collectionName)
                 case .PATCH where requestedResource(request) != nil:
                     return handlePATCH(
                         request,

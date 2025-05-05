@@ -54,7 +54,7 @@ struct Router {
         }
     }
     
-    private func handlePUT() -> Response? {
+    private func handlePUT() -> Response {
         switch request.route() {
         case let .resource(item) where !itemExists(item):
             return Response(statusCode: 200)
@@ -66,7 +66,8 @@ struct Router {
                 rawBody:  request.body,
                 contentLength: request.body?.contentLenght()
             )
-        default: return nil
+        default:
+            return Response(statusCode: 400)
         }
     }
 
