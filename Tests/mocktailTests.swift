@@ -68,7 +68,7 @@ struct Parser {
         else {
             return Response(statusCode: 404)
         }
-        return Response(statusCode: 405)
+        return Response(statusCode: 204)
     }
     
     private func rawBody(for collectionName: String) -> String? {
@@ -349,6 +349,16 @@ final class Tests: XCTestCase {
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 404)
+        
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers204OnSuccessfulItemDeletion() {
+        let item = ["id": 1]
+        let sut = makeSUT(resources: ["recipes": [item]])
+        let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 204)
         
         expectNoDifference(response, expectedResponse)
     }
