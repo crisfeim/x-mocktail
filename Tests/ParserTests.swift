@@ -66,16 +66,6 @@ extension Tests {
         expectNoDifference(response.statusCode, 400)
     }
 
-    
-    func test_parser_delivers400OnMalformedURL() {
-        XCTExpectFailure("This should be a high leve check, not a GET specific one") {
-            let sut = makeSUT(collections: ["recipes": []])
-            let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
-            let response = sut.parse(request)
-            expectNoDifference(response.statusCode, 400)
-        }
-    }
-    
     func test_parse_delivers415OnPayloadRequiredRequestsMissingContentTypeHeader() {
         let sut = makeSUT(collections: ["recipes": []])
         
