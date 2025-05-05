@@ -3,7 +3,7 @@
 import Foundation
 
 // Less esoteric version of my beloved `asterisk`
-func mutate<T>(_ item: T, withMap map: (inout T) -> Void) -> T {
+func new<T>(_ item: T, withMap map: (inout T) -> Void) -> T {
     item * map
 }
 

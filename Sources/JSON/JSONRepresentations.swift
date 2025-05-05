@@ -16,7 +16,7 @@ public extension JSONItem {
     }
     
     func applyPatch(_ patch: JSONItem) -> JSONItem {
-        mutate(self) {
+        new(self) {
             for (key, value) in patch { $0[key] = value }
         }
     }
