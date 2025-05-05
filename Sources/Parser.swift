@@ -56,7 +56,7 @@ public struct Parser {
 extension Parser {
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
-        if let body = request.body, isValidNonEmptyJSON(body) {
+        if let body = request.body, JSONUtils.isValidNonEmptyJSON(body) {
             var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: body.data(using: .utf8)!, options: []) as? JSONItem
             let hasID = jsonItem?.keys.contains("id") ?? false
             let statusCode = hasID ? 400 : 201
@@ -87,8 +87,8 @@ extension Parser {
         
         guard
             let body = request.body,
-            isValidNonEmptyJSON(body),
-            let bodyId = jsonItem(from: body)?["id"] as? String,
+            JSONUtils.isValidNonEmptyJSON(body),
+            let bodyId = JSONUtils.jsonItem(from: body)?["id"] as? String,
             bodyId == id
         else {
             return Response(statusCode: 400)
@@ -104,8 +104,8 @@ extension Parser {
     func handlePATCH(_ request: Request, on collection: String, for existingItem: JSONItem) -> Response {
         guard
             let body = request.body,
-            isValidNonEmptyJSON(body),
-            let patch = jsonItem(from: body)
+            JSONUtils.isValidNonEmptyJSON(body),
+            let patch = JSONUtils.jsonItem(from: body)
         else {
             return Response(statusCode: 400)
         }
@@ -146,6 +146,17 @@ enum JSONUtils {
         guard let data = string.data(using: .utf8) else { return false }
         return (try? JSONSerialization.jsonObject(with: data)) != nil
     }
+    
+    
+    static func jsonItem(from string: String) -> JSONItem? {
+        guard let data = string.data(using: .utf8) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data, options: []) as? JSONItem
+    }
+    
+    static func isValidNonEmptyJSON(_ body: String?) -> Bool {
+        guard let body = body, JSONUtils.isValidJSON(body) else { return false }
+        return body.removingSpaces().removingBreaklines() != "{}"
+    }
 }
 
 // MARK: - Helpers
@@ -161,16 +172,6 @@ extension Parser {
         let items = resources[collection] as? JSONArray
         let item = items?.getItem(with: id)
         return item
-    }
-    
-    private func jsonItem(from string: String) -> JSONItem? {
-        guard let data = string.data(using: .utf8) else { return nil }
-        return try? JSONSerialization.jsonObject(with: data, options: []) as? JSONItem
-    }
-    
-    private func isValidNonEmptyJSON(_ body: String?) -> Bool {
-        guard let body = body, JSONUtils.isValidJSON(body) else { return false }
-        return body.removingSpaces().removingBreaklines() != "{}"
     }
 }
 
