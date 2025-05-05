@@ -297,7 +297,7 @@ final class Tests: XCTestCase {
         let expectedResponse = Response(
             statusCode: 200,
             rawBody: #"[{"id":1},{"id":2}]"#,
-            contentLength: #"[{"id":1},{"id":2}]"#.count
+            contentLength: 19
         )
         
         expectNoDifference(response, expectedResponse)
@@ -311,7 +311,7 @@ final class Tests: XCTestCase {
         let expectedResponse = Response(
             statusCode: 200,
             rawBody: #"{"id":1}"#,
-            contentLength: #"{"id":1}"#.contentLenght()
+            contentLength: 8
         )
         
         expectNoDifference(response, expectedResponse)
