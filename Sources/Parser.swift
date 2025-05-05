@@ -13,14 +13,14 @@ struct HeadersValidator {
     let request: Request
     let collections: [String: JSON]
     
-     typealias ValidationResult = Result<Void, ValidationError>
+    typealias Result = Swift.Result<Void, ValidationError>
     
-    var result: ValidationResult {
+    var result: Result {
         guard request.headers.contains("Host"), let collectionName = request.collectionName()  else {
             return .failure(.badRequest)
         }
         
-        guard let method = request.method() else {
+        guard let _ = request.method() else {
             return .failure(.unsupportedMethod)
         }
         
