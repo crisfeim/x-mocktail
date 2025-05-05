@@ -472,16 +472,20 @@ final class Tests: XCTestCase {
         expectNoDifference(response.statusCode, expectedResponse.statusCode)
         expectNoDifference(response.headers, expectedResponse.headers)
         
-        let responseBody = try XCTUnwrap(response.rawBody)
-        let expectedBody = try XCTUnwrap(expectedResponse.rawBody)
+        expectNoDifference(
+            try XCTUnwrap(nsDictionary(from: response.rawBody!)),
+            try XCTUnwrap(nsDictionary(from: expectedResponse.rawBody!))
+        )
+    }
     
-        let responseJSON = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(responseBody.utf8)))
-        let expectedJSON = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(expectedBody.utf8)))
-        
-        let responseDict = try XCTUnwrap(responseJSON as? NSDictionary)
-        let expectedDict = try XCTUnwrap(expectedJSON as? NSDictionary)
-        
-        expectNoDifference(responseDict, expectedDict)
+    private func nsDictionary(from jsonString: String) -> NSDictionary? {
+        guard
+            let responseJSON = try? JSONSerialization.jsonObject(with: Data(jsonString.utf8)),
+            let responseDict = responseJSON as? NSDictionary
+        else {
+            return nil
+        }
+        return responseDict
     }
     
     func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
