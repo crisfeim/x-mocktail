@@ -22,7 +22,7 @@ public struct Parser {
             idGenerator: idGenerator
         )
         
-        switch validator.result {
+        switch validator.errorCode {
         case .none:
             return router.handleRequest()
         case let .some(errorCode):

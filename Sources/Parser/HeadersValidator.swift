@@ -17,7 +17,7 @@ struct HeadersValidator {
     
     typealias Result = Int?
     
-    var result: Result {
+    var errorCode: Result {
         guard request.headers.contains("Host")  else {
             return StatusCode.badRequest
         }
