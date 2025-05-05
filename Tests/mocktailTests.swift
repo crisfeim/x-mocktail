@@ -40,7 +40,9 @@ struct Parser {
     }
     
     private func rawBody(for collectionName: String) -> String? {
-        (resources[collectionName] as? [Int])?.description.removingSpaces()
+        guard let items = resources[collectionName] else { return nil }
+        guard let data = try? JSONSerialization.data(withJSONObject: items) else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 }
 
@@ -266,13 +268,15 @@ final class Tests: XCTestCase {
     }
     
     func test_parser_deliversExpectedArrayOnNonEmptyCollection() {
-        let sut = makeSUT(resources: ["recipes": [1,2]])
+        let item1 = ["id": 1]
+        let item2 = ["id": 2]
+        let sut = makeSUT(resources: ["recipes": [item1, item2]])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(
             statusCode: 200,
-            rawBody: "[1,2]",
-            contentLength: "[1,2]".count
+            rawBody: #"[{"id":1},{"id":2}]"#,
+            contentLength: #"[{"id":1},{"id":2}]"#.count
         )
         
         expectNoDifference(response, expectedResponse)
