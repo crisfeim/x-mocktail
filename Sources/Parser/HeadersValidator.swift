@@ -26,18 +26,10 @@ struct HeadersValidator {
             return StatusCode.unsupportedMethod
         }
         
-        if request.payloadRequiredRequest() {
-            guard let contentType = request.contentType(), contentType == "application/json" else {
-                return StatusCode.missingOrWrongMediaType
-            }
+        guard request.hasWrongOrMissingContentType() && request.isPayloadRequired() else {
+                return nil
         }
 
-        return nil
-    }
-    
-    func getItem(withId id: String, on collectionName: String, collections: [String: JSON]) -> JSONItem? {
-        let items = collections[collectionName] as? JSONArray
-        let item = items?.getItem(with: id)
-        return item
+        return StatusCode.missingOrWrongMediaType
     }
 }

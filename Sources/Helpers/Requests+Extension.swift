@@ -63,7 +63,7 @@ extension Request {
         return HTTPVerb(rawValue: verb)
     }
     
-    func payloadRequiredRequest() -> Bool {
+    func isPayloadRequired() -> Bool {
         [HTTPVerb.PUT, .PATCH, .POST].contains(method())
     }
     
@@ -94,6 +94,14 @@ extension Request {
     
     func route() -> RequestType {
         RequestType(urlComponents())
+    }
+    
+    func hasWrongOrMissingContentType() -> Bool {
+        guard let contentType = contentType() else {
+            return true
+        }
+        
+        return contentType != "application/json"
     }
     
     func contentType() -> String? {
