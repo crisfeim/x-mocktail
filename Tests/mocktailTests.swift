@@ -545,6 +545,15 @@ final class Tests: XCTestCase {
         let expectedResponse = Response(statusCode: 400)
         expectNoDifference(response, expectedResponse)
     }
+    
+    func test_parse_delivers400OnPUTWithEmptyBody() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "PUT /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json")
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 400)
+        expectNoDifference(response, expectedResponse)
+    }
 }
 
 // MARK: - Helpers
