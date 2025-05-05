@@ -135,6 +135,16 @@ extension Tests {
         }
     }
     
+    func test_parse_delivers404OnPayloadRequiredVerbsNonExistingCollection() {
+        let sut = makeSUT()
+        ["POST", "PATCH", "PUT"].forEach { verb in
+            let request = Request(headers: "\(verb) /nonExistingCollection HTTP/1.1\nHost: localhost")
+            
+            let response = sut.parse(request)
+            let expectedResponse = Response(statusCode: 404)
+            expectNoDifference(response, expectedResponse)
+        }
+    }
 }
 
 // MARK: - GET
@@ -223,15 +233,6 @@ extension Tests {
 
 // MARK: - POST
 extension Tests {
-    
-    func test_parse_delivers404OnPOSTNonExistingCollection() {
-        let sut = makeSUT()
-        let request = Request(headers: "POST /nonExistingCollection HTTP/1.1\nHost: localhost")
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 404)
-        expectNoDifference(response, expectedResponse)
-    }
     
     func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
         let sut = makeSUT(resources: ["recipes": []])
