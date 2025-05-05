@@ -144,8 +144,8 @@ private extension Response {
         contentLength: Int? = nil
     ) {
         let date = Self.dateFormatter.string(from: Date())
-        self.statusCode = statusCode
-        headers = [
+        
+        let headers = [
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, HEAD, PUT, PATCH, POST, DELETE",
             "Access-Control-Allow-Headers": "content-type",
@@ -155,7 +155,7 @@ private extension Response {
             "Content-Length": contentLength?.description
         ].compactMapValues { $0 }
         
-        self.rawBody = rawBody
+        self.init(statusCode: statusCode, headers: headers, rawBody: rawBody)
     }
     
     static let dateFormatter = DateFormatter() * { df in
