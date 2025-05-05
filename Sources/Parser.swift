@@ -47,6 +47,7 @@ extension Parser {
         case .singleResource(let id):
             guard let id = Int(id), let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
             
+
             let jsonString =  jsonString(of: item)
             return Response(
                 statusCode: 200,
@@ -146,7 +147,7 @@ extension Parser {
             return Response(statusCode: 404)
         }
 
-        guard let patchBody = request.body, let patchData = patchBody.data(using: .utf8),
+        guard let patchBody = request.body, let patchData = patchBody.data(using: .utf8), patchBody.removingSpaces().removingBreaklines() != "{}",
               let patch = try? JSONSerialization.jsonObject(with: patchData, options: []) as? JSONItem, !patch.isEmpty else {
             return Response(statusCode: 400)
         }
