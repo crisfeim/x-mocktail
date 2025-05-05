@@ -3,8 +3,9 @@
 import XCTest
 import CustomDump
 
+typealias JSON = [Int]
 struct Parser {
-    let resources: [String: [Int]]
+    let resources: [String: JSON]
     func parse(_ request: Request) -> Response {
         guard request.headers.contains("Host") else {
             return Response(statusCode: 400)
@@ -293,7 +294,7 @@ final class Tests: XCTestCase {
 
 // MARK: - Helpers
 private extension Tests {
-    func makeSUT(resources: [String: [Int]] = [:]) -> Parser {
+    func makeSUT(resources: [String: JSON] = [:]) -> Parser {
         Parser(resources: resources)
     }
 }
