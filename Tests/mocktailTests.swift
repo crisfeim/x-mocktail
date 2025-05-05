@@ -376,11 +376,24 @@ final class Tests: XCTestCase {
         
         expectNoDifference(response, expectedResponse)
     }
+    
+    func test_parse_delivers415OnUnsupportedMediaType() {
+        let sut = makeSUT()
+        let request = Request(headers: "POST /recipes Content-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 415)
+        
+        expectNoDifference(response, expectedResponse)
+    }
 }
 
 // MARK: - Helpers
 private extension Tests {
     func makeSUT(resources: [String: JSON] = [:]) -> Parser {
         Parser(resources: resources)
+    }
+    
+    func anyNonJSONMediaType() -> String {
+        "application/freestyle"
     }
 }
