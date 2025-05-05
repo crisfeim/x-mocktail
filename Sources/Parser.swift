@@ -113,8 +113,11 @@ extension Parser {
         }
         
         if let body = request.body, isValidJSON(body), body.removingSpaces().removingBreaklines() != "{}" {
-            
-            return Response(statusCode: 200, rawBody: body)
+            let hasID = jsonItem(from: body)?.keys.contains("id") ?? false
+            return Response(
+                statusCode: hasID ? 400 : 200,
+                rawBody: hasID ? nil : body
+            )
         }
         return Response(statusCode: 400)
     }
@@ -169,6 +172,11 @@ extension Parser {
     private func jsonString(of item: JSONItem) -> String? {
         guard let data = try? JSONSerialization.data(withJSONObject: item) else { return nil }
         return String(data: data, encoding: .utf8)
+    }
+    
+    private func jsonItem(from string: String) -> JSONItem? {
+        guard let data = string.data(using: .utf8) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data, options: []) as? JSONItem
     }
     
     func isValidJSON(_ string: String) -> Bool {
