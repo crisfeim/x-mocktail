@@ -5,16 +5,40 @@ struct Router {
     let request: Request
     let collections: [String: JSON]
     func handleRequest() -> Response? {
-        switch request.route() {
-        case .collection where request.method() == .GET: return nil
-        case .resource(_) where request.method() == .GET: return nil
-        case .collection where request.method() == .POST: return nil
-        case .resource(_) where request.method() == .PUT: return nil
-        case .resource(_) where request.method() == .DELETE: return nil
-        case .resource(_) where request.method() == .PATCH: return nil
-        case .nestedSubroute: return nil
+        switch request.method() {
+        case .GET: return handleGET()
         default: return nil
         }
+    }
+    
+    private func handleGET() -> Response? {
+        switch request.route() {
+        case let .collection(name) where !collectionExists(name):
+            return Response(statusCode: 404)
+        case let .collection(name) where collectionIsEmpty(name):
+            return Response(
+                statusCode: 200,
+                rawBody: "[]",
+                contentLength: "[]".contentLenght()
+            )
+        case let .collection(name) where !collectionIsEmpty(name):
+            let body = collections[name].flatMap(JSONUtils.jsonToString)
+            return Response(
+                statusCode: 200,
+                rawBody: body,
+                contentLength: body?.contentLenght()
+            )
+        default: return nil
+        }
+    }
+
+    private func collectionExists(_ collectionName: String) -> Bool {
+        collections.keys.contains(collectionName)
+    }
+    
+    private func collectionIsEmpty(_ collectionName: String) -> Bool {
+        let collection = collections[collectionName] as? JSONArray
+        return collection?.isEmpty ?? true
     }
 }
 
@@ -137,7 +161,7 @@ extension Parser {
             guard let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
             
 
-            let jsonString =  jsonString(of: item)
+            let jsonString =  JSONUtils.jsonString(of: item)
             return Response(
                 statusCode: 200,
                 rawBody: jsonString,
@@ -163,7 +187,7 @@ extension Parser {
             jsonItem?["id"] = newId
             return Response(
                 statusCode: statusCode,
-                rawBody: isValidJSON(body) && !hasID ? jsonString(of: jsonItem!) : nil
+                rawBody: isValidJSON(body) && !hasID ? JSONUtils.jsonString(of: jsonItem!) : nil
             )
         } else {
             return Response(statusCode: 400)
@@ -223,12 +247,23 @@ extension Parser {
             }
         }
 
-        let updatedJSON = jsonString(of: patchedItem)
+        let updatedJSON = JSONUtils.jsonString(of: patchedItem)
         return Response(statusCode: 200, rawBody: updatedJSON, contentLength: updatedJSON?.contentLenght())
     }
 }
 
 
+enum JSONUtils {
+    static func jsonToString(_ json: JSON) -> String? {
+        guard let data = try? JSONSerialization.data(withJSONObject: json) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+    
+    static func jsonString(of item: JSONItem) -> String? {
+        guard let data = try? JSONSerialization.data(withJSONObject: item) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+}
 
 // MARK: - Helpers
 extension Parser {
@@ -243,11 +278,6 @@ extension Parser {
         let items = resources[collection] as? JSONArray
         let item = items?.getItem(with: id)
         return item
-    }
-    
-    private func jsonString(of item: JSONItem) -> String? {
-        guard let data = try? JSONSerialization.data(withJSONObject: item) else { return nil }
-        return String(data: data, encoding: .utf8)
     }
     
     private func jsonItem(from string: String) -> JSONItem? {
@@ -348,13 +378,13 @@ extension Request {
     }
     
     enum RequestType {
-        case collection
+        case collection(name: String)
         case resource(id: String)
         case nestedSubroute
         
         init(_ urlComponents: [String]) {
             switch urlComponents.count {
-            case 1: self = .collection
+            case 1: self = .collection(name: urlComponents[0])
             case 2: self = .resource(id: urlComponents[1])
             default: self = .nestedSubroute
             }
