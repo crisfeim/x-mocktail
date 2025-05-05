@@ -408,7 +408,7 @@ final class Tests: XCTestCase {
     
     func test_parse_delivers415OnPOSTUnsupportedMediaType() {
         let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "POST /recipes Content-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
+        let request = Request(headers: "POST /recipes\nContent-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 415)
         
@@ -418,7 +418,7 @@ final class Tests: XCTestCase {
     func test_parse_delivers400OnInvalidJSONBody() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
-            headers: "POST /recipes Content-Type: application/json\nHost: localhost",
+            headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
             body: "invalid json"
         )
         
@@ -431,7 +431,7 @@ final class Tests: XCTestCase {
     func test_parse_delivers400OnEmptyJSONBody() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
-            headers: "POST /recipes Content-Type: application/json\nHost: localhost",
+            headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
             body: ""
         )
         
@@ -493,7 +493,7 @@ final class Tests: XCTestCase {
     
     func test_parse_delivers415OnPUTUnsupportedMediaType() {
         let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "PUT /recipes Content-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
+        let request = Request(headers: "PUT /recipes\nContent-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 415)
         
