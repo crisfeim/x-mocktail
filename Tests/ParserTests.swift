@@ -436,7 +436,7 @@ private extension Tests {
         
         let request = Request(
             headers: "\(verb) /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-            body: nil
+            body: ""
         )
         
         let response = sut.parse(request)

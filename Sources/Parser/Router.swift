@@ -72,13 +72,13 @@ struct Router {
         switch request.route() {
         case let .resource(id, collection) where !itemExists(id, collection):
             return Response(statusCode: 200)
-        case .resource where request.body == nil:
+        case .resource where request.body.isEmpty:
             return .badRequest
         case .resource where request.payloadIsValidNonEmptyJSON():
             return Response(
                 statusCode: 200,
                 rawBody:  request.body,
-                contentLength: request.body?.contentLenght()
+                contentLength: request.body.contentLenght()
             )
         default:
             return .badRequest

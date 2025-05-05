@@ -25,8 +25,7 @@ enum JSONUtils {
         return try? JSONSerialization.jsonObject(with: data, options: []) as? JSONItem
     }
     
-    static func isValidNonEmptyJSON(_ body: String?) -> Bool {
-        guard let body = body, JSONUtils.isValidJSON(body) else { return false }
-        return body.removingSpaces().removingBreaklines() != "{}"
+    static func isValidNonEmptyJSON(_ body: String) -> Bool {
+        body.removingSpaces().removingBreaklines() != "{}" && JSONUtils.isValidJSON(body)
     }
 }

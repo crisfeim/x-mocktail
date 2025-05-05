@@ -24,7 +24,7 @@ extension Request {
     }
     
     func payloadAsJSONItem() -> JSONItem? {
-        JSONUtils.jsonItem(from: body ?? "")
+        JSONUtils.jsonItem(from: body)
     }
     
     func payloadJSONHasID() -> Bool {
