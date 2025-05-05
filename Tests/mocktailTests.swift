@@ -18,13 +18,13 @@ struct Parser {
         }
         
         switch request.type() {
-        case .allResources:
-            return Response(statusCode: collectionExists(collectionName) ? 200 : 404)
+        case .allResources where collectionExists(collectionName):
+            return Response(statusCode: 200)
         case .singleResource(let id):
             guard let id = Int(id) else { return Response(statusCode: 400) }
             let items = resources[collectionName] ?? []
             return Response(statusCode: items.contains(id) ? 200 : 404)
-        case .subroute:
+        default:
             return Response(statusCode: 404)
         }
     }
@@ -32,6 +32,33 @@ struct Parser {
     private func collectionExists(_ collectionName: String) -> Bool {
         resources.keys.contains(collectionName)
     }
+}
+
+private extension Response {
+    init(statusCode: Int) {
+        let date = Self.dateFormatter.string(from: Date())
+        self.statusCode = statusCode
+        headers = [
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, HEAD, PUT, PATCH, POST, DELETE",
+            "Access-Control-Allow-Headers": "content-type",
+            "Content-Type": "application/json",
+            "Date": date,
+            "Connection": "close"
+        ]
+    }
+    
+    static let dateFormatter = DateFormatter() * { df in
+        df.dateFormat = "EEE',' dd MMM yyyy HH:mm:ss zzz"
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+    }
+}
+
+func *<T>(lhs: T, rhs: (inout T) -> Void) -> T {
+    var copy = lhs
+    rhs(&copy)
+    return copy
 }
 
 private extension Request {
@@ -47,7 +74,7 @@ private extension Request {
     }
     
     func urlComponents() -> [String] {
-       Array(normalizedURL()?.components(separatedBy: "/") ?? [])
+        Array(normalizedURL()?.components(separatedBy: "/") ?? [])
     }
     
     func id() -> String? {
@@ -107,6 +134,7 @@ fileprivate extension Array {
 }
 struct Response {
     let statusCode: Int
+    let headers: [String: String]
 }
 
 struct Request {
