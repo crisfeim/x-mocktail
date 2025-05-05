@@ -29,6 +29,11 @@ public struct Parser {
         }
     }
     
+}
+
+// MARK: - GET
+extension Parser {
+    
     private func handleGET(_ request: Request, on collectionName: String) -> Response {
         
         switch request.type() {
@@ -40,7 +45,7 @@ public struct Parser {
             )
         case .singleResource(let id):
             guard let id = Int(id), let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
-           
+            
             let jsonString =  jsonString(of: item)
             return Response(
                 statusCode: 200,
@@ -52,6 +57,11 @@ public struct Parser {
         }
     }
     
+}
+ 
+
+// MARK: - DELETE
+extension Parser {
     private func handleDELETE(_ request: Request, on collection: String) -> Response {
         guard
             let idString = request.type().id,
@@ -62,6 +72,10 @@ public struct Parser {
         }
         return Response(statusCode: 204)
     }
+}
+
+// MARK: - POST
+extension Parser {
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
         guard let contentType = request.contentType(), contentType == "application/json" else {
@@ -83,7 +97,11 @@ public struct Parser {
         }
         return Response(statusCode: 415)
     }
-    
+}
+
+// MARK: - PUT
+extension Parser {
+
     private func handlePUT(_ request: Request, on collection: String) -> Response {
         guard let contentType = request.contentType(), contentType == "application/json" else {
             return Response(statusCode: 415)
@@ -99,6 +117,12 @@ public struct Parser {
         }
         return Response(statusCode: 400)
     }
+    
+}
+
+
+// MARK: - Helpers
+extension Parser {
     
     private func rawBody(for collectionName: String) -> String? {
         guard let items = resources[collectionName] else { return nil }
