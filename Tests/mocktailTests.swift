@@ -250,15 +250,7 @@ fileprivate extension Array {
 }
 
 
-struct Request {
-    let headers: String
-    let body: String?
 
-    init(headers: String, body: String? = nil) {
-        self.headers = headers
-        self.body = body
-    }
-}
 
 final class Tests: XCTestCase {
     func test_parser_delivers400ResponseOnEmptyHeaders() {
