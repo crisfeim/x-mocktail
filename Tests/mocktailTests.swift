@@ -19,7 +19,7 @@ struct Parser {
         
         switch request.type() {
         case .allResources where collectionExists(collectionName):
-            return Response(statusCode: 200)
+            return Response(statusCode: 200, rawBody: "[]", contentLength: 2)
         case .singleResource(let id):
             guard let id = Int(id) else { return Response(statusCode: 400) }
             let items = resources[collectionName] ?? []
@@ -35,7 +35,11 @@ struct Parser {
 }
 
 private extension Response {
-    init(statusCode: Int) {
+    init(
+        statusCode: Int,
+        rawBody: String? = nil,
+        contentLength: Int? = nil
+    ) {
         let date = Self.dateFormatter.string(from: Date())
         self.statusCode = statusCode
         headers = [
@@ -44,8 +48,11 @@ private extension Response {
             "Access-Control-Allow-Headers": "content-type",
             "Content-Type": "application/json",
             "Date": date,
-            "Connection": "close"
-        ]
+            "Connection": "close",
+            "Content-Length": contentLength?.description
+        ].compactMapValues { $0 }
+        
+        self.rawBody = rawBody
     }
     
     static let dateFormatter = DateFormatter() * { df in
@@ -132,9 +139,10 @@ fileprivate extension Array {
         return self[index]
     }
 }
-struct Response {
+struct Response: Equatable {
     let statusCode: Int
     let headers: [String: String]
+    let rawBody: String?
 }
 
 struct Request {
@@ -224,6 +232,19 @@ final class Tests: XCTestCase {
         let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         XCTAssertEqual(response.statusCode, 400)
+    }
+    
+    func test_parser_deliversEmptyJSONArrayOnEmptyCollection() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        let expectedResponse = Response(
+            statusCode: 200,
+            rawBody: "[]",
+            contentLength: 2
+        )
+        
+        XCTAssertEqual(response, expectedResponse)
     }
 }
 
