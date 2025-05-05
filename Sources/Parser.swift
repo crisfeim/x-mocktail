@@ -7,6 +7,7 @@ struct Router {
     func handleRequest() -> Response? {
         switch request.method() {
         case .GET: return handleGET()
+        case .DELETE: return handleDELETE()
         default: return nil
         }
     }
@@ -28,7 +29,25 @@ struct Router {
                 rawBody: body,
                 contentLength: body?.contentLenght()
             )
+        case let .resource(item) where itemExists(item):
+            let body = (collections[item.collectionName] as? JSONArray)?.getItem(with: item.id).flatMap(JSONUtils.jsonItemToString)
+            return Response(
+                statusCode: 200,
+                rawBody: body,
+                contentLength: body?.contentLenght()
+            )
         default: return nil
+        }
+    }
+    
+    private func handleDELETE() -> Response? {
+        switch request.route() {
+        case .collection, .nestedSubroute:
+            return Response(statusCode: 400)
+        case let .resource(item) where !itemExists(item):
+            return Response(statusCode: 404)
+        case .resource:
+            return Response(statusCode: 204)
         }
     }
 
@@ -39,6 +58,10 @@ struct Router {
     private func collectionIsEmpty(_ collectionName: String) -> Bool {
         let collection = collections[collectionName] as? JSONArray
         return collection?.isEmpty ?? true
+    }
+    
+    private func itemExists(_ item: (id: String, collectionName: String)) -> Bool {
+        (collections[item.collectionName] as? JSONArray)?.getItem(with: item.id) != nil
     }
 }
 
@@ -114,8 +137,6 @@ public struct Parser {
             guard let response = router.handleRequest() else {
                 let collectionName = request.collectionName()!
                 switch request.method() {
-                case .GET   : return handleGET(request, on: collectionName)
-                case .DELETE: return Response(statusCode: 204)
                 case .POST  : return handlePOST(request, on: collectionName)
                 case .PUT   : return handlePUT(request, on: collectionName)
                 case .PATCH where requestedResource(request) != nil:
@@ -148,29 +169,7 @@ public struct Parser {
 // MARK: - GET
 extension Parser {
     
-    private func handleGET(_ request: Request, on collectionName: String) -> Response {
-        let body = rawBody(for: collectionName)
-        switch request.route() {
-        case .collection where body != nil:
-            return Response(
-                statusCode: 200,
-                rawBody: body,
-                contentLength: body?.contentLenght()
-            )
-        case .resource(let id):
-            guard let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
-            
 
-            let jsonString =  JSONUtils.jsonString(of: item)
-            return Response(
-                statusCode: 200,
-                rawBody: jsonString,
-                contentLength: jsonString?.contentLenght()
-            )
-        default:
-            return Response(statusCode: 404)
-        }
-    }
     
 }
 
@@ -187,7 +186,7 @@ extension Parser {
             jsonItem?["id"] = newId
             return Response(
                 statusCode: statusCode,
-                rawBody: isValidJSON(body) && !hasID ? JSONUtils.jsonString(of: jsonItem!) : nil
+                rawBody: isValidJSON(body) && !hasID ? JSONUtils.jsonItemToString(jsonItem!) : nil
             )
         } else {
             return Response(statusCode: 400)
@@ -247,7 +246,7 @@ extension Parser {
             }
         }
 
-        let updatedJSON = JSONUtils.jsonString(of: patchedItem)
+        let updatedJSON = JSONUtils.jsonItemToString( patchedItem)
         return Response(statusCode: 200, rawBody: updatedJSON, contentLength: updatedJSON?.contentLenght())
     }
 }
@@ -259,7 +258,7 @@ enum JSONUtils {
         return String(data: data, encoding: .utf8)
     }
     
-    static func jsonString(of item: JSONItem) -> String? {
+    static func jsonItemToString(_ item: JSONItem) -> String? {
         guard let data = try? JSONSerialization.data(withJSONObject: item) else { return nil }
         return String(data: data, encoding: .utf8)
     }
@@ -378,21 +377,22 @@ extension Request {
     }
     
     enum RequestType {
+        typealias Item = (id: String, collectionName: String)
         case collection(name: String)
-        case resource(id: String)
+        case resource(Item)
         case nestedSubroute
         
         init(_ urlComponents: [String]) {
             switch urlComponents.count {
             case 1: self = .collection(name: urlComponents[0])
-            case 2: self = .resource(id: urlComponents[1])
+            case 2: self = .resource((id: urlComponents[1], collectionName: urlComponents[0]))
             default: self = .nestedSubroute
             }
         }
         
         var id: String? {
-            if case let .resource(id) = self {
-                return id
+            if case let .resource(item) = self {
+                return item.id
             }
             return nil
         }
