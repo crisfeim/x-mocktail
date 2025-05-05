@@ -4,7 +4,18 @@ import XCTest
 import CustomDump
 import MockTail
 
+
 final class Tests: XCTestCase {
+    func test_parser_delivers405OnUnsupportedMethod() {
+        let sut = makeSUT()
+        let request = Request(headers: "Unsupported /recipes HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        expectNoDifference(response.statusCode, 405)
+    }
+}
+
+// MARK: - Common to all HTTP verbs
+extension Tests {
     func test_parser_delivers400ResponseOnEmptyHeaders() {
         let sut = makeSUT()
         let request = Request(headers: "")
@@ -57,13 +68,18 @@ final class Tests: XCTestCase {
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 404)
     }
+
     
-    func test_parser_delivers405OnUnsupportedMethod() {
-        let sut = makeSUT()
-        let request = Request(headers: "Unsupported /recipes HTTP/1.1\nHost: localhost")
+    func test_parser_delivers404OnMalformedURL() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 405)
+        expectNoDifference(response.statusCode, 404)
     }
+}
+
+// MARK: - GET
+extension Tests {
     
     func test_parser_delivers200OnExistingCollection() {
         let sut = makeSUT(resources: ["recipes": []])
@@ -72,18 +88,12 @@ final class Tests: XCTestCase {
         expectNoDifference(response.statusCode, 200)
     }
     
+    
     func test_parser_delivers200OnExistingCollectionWithaTrailingSlash() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes/ HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 200)
-    }
-    
-    func test_parser_delivers404OnMalformedURL() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 404)
     }
     
     func test_parser_deliversEmptyJSONArrayOnEmptyCollection() {
@@ -128,6 +138,10 @@ final class Tests: XCTestCase {
         expectNoDifference(response, expectedResponse)
     }
     
+}
+
+// MARK: - DELETE
+extension Tests {
     func test_parse_delivers404OnNonExistentItemDeletion() {
         let sut = makeSUT()
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
@@ -147,6 +161,10 @@ final class Tests: XCTestCase {
         expectNoDifference(response, expectedResponse)
     }
     
+}
+
+// MARK: - POST
+extension Tests {
     func test_parse_delivers415OnPOSTMissingContentTypeHeader() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "POST /recipes HTTP/1.1\nHost: localhost")
@@ -226,7 +244,7 @@ final class Tests: XCTestCase {
         
         expectNoDifference(response.statusCode, expectedResponse.statusCode)
         expectNoDifference(response.headers, expectedResponse.headers)
-       
+        
         let responseBody = try XCTUnwrap(response.rawBody)
         let expectedBody = try XCTUnwrap(expectedResponse.rawBody)
         
@@ -249,6 +267,10 @@ final class Tests: XCTestCase {
         expectNoDifference(response, expectedResponse)
     }
     
+}
+   
+// MARK: - PUT
+extension Tests {
     func test_parse_delivers415OnPUTMissingContentTypeHeader() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "PUT /recipes HTTP/1.1\nHost: localhost")
