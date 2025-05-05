@@ -77,7 +77,7 @@ struct Parser {
     }
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
-        guard let _ = request.contentType else {
+        guard let contentType = request.contentType, contentType == "application/json" else {
             return Response(statusCode: 415)
         }
         
@@ -468,7 +468,7 @@ final class Tests: XCTestCase {
     func test_parse_delivers201OnValidJSON() throws {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
-            headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/freestyle",
+            headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
             body: #"{"title":"Fried chicken"}"#
         )
         let response = sut.parse(request)
@@ -489,7 +489,7 @@ final class Tests: XCTestCase {
     func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
-            headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/freestyle",
+            headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
             body: #"{"id": 1,"title":"Fried chicken"}"#
         )
         
