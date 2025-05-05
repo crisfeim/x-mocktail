@@ -577,6 +577,15 @@ final class Tests: XCTestCase {
         let expectedResponse = Response(statusCode: 400)
         expectNoDifference(response, expectedResponse)
     }
+    
+    func test_parse_delivers404OnPUTToNonExistingCollection() {
+        let sut = makeSUT()
+        let request = Request(headers: "PUT /nonExistingResource HTTP/1.1\nHost: localhost\nContent-type: application/json")
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 404)
+        expectNoDifference(response, expectedResponse)
+    }
 }
 
 // MARK: - Helpers
