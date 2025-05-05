@@ -320,7 +320,7 @@ extension Tests {
     
     func test_parse_delivers404OnPUTNonExistingCollection() {
         let sut = makeSUT()
-        let request = Request(headers: "PUT /nonExistingResource HTTP/1.1\nHost: localhost\nContent-type: application/json")
+        let request = Request(headers: "PUT /nonExistingCollection HTTP/1.1\nHost: localhost\nContent-type: application/json")
         
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 404)
@@ -432,6 +432,15 @@ extension Tests {
         let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json")
         let response = sut.parse(request)
         expectNoDifference(response, Response(statusCode: 404))
+    }
+    
+    func test_parse_delivers404OnPATCHNonExistingCollection() {
+        let sut = makeSUT()
+        let request = Request(headers: "PATCH /nonExistingCollection HTTP/1.1\nHost: localhost\nContent-type: application/json")
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 404)
+        expectNoDifference(response, expectedResponse)
     }
 
 
