@@ -1,7 +1,7 @@
 // Created by Cristian Felipe Patiño Rojas on 5/5/25.
 import Foundation
 
-enum HeadersValidator {
+struct HeadersValidator {
     
     enum ValidationError: Int, Swift.Error {
         case notFound = 404
@@ -10,9 +10,12 @@ enum HeadersValidator {
         case missingOrWrongMediaType = 415
     }
     
-    fileprivate typealias ValidationResult = Result<(method: Request.HTTPVerb, collectionName: String), ValidationError>
+    let request: Request
+    let collections: [String: JSON]
     
-    fileprivate static func validateHeaders(of request: Request, on collections: [String: JSON]) -> ValidationResult {
+     typealias ValidationResult = Result<(method: Request.HTTPVerb, collectionName: String), ValidationError>
+    
+    var result: ValidationResult {
         guard request.headers.contains("Host"), let collectionName = request.collectionName()  else {
             return .failure(.badRequest)
         }
@@ -44,7 +47,7 @@ enum HeadersValidator {
         return .success((method, collectionName))
     }
     
-    private static func getItem(withId id: String, on collectionName: String, collections: [String: JSON]) -> JSONItem? {
+    func getItem(withId id: String, on collectionName: String, collections: [String: JSON]) -> JSONItem? {
         let items = collections[collectionName] as? JSONArray
         let item = items?.getItem(with: id)
         return item
@@ -59,8 +62,8 @@ public struct Parser {
     }
     
     public func parse(_ request: Request) -> Response {
-        
-        switch HeadersValidator.validateHeaders(of: request, on: resources) {
+        let validator = HeadersValidator(request: request, collections: resources)
+        switch validator.result {
         case let .success(tuple):
             switch tuple.method {
             case .GET   : return handleGET(request, on: tuple.collectionName)
