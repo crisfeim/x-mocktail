@@ -185,9 +185,4 @@ private func *<T>(lhs: T, rhs: (inout T) -> Void) -> T {
 
 
 
-extension Array {
-    func get(at index: Int) -> Element? {
-        guard indices.contains(index) else { return nil }
-        return self[index]
-    }
-}
+
