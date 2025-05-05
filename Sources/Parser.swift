@@ -26,6 +26,7 @@ public struct Parser {
         case .DELETE: return handleDELETE(request, on: collectionName)
         case .POST  : return handlePOST(request, on: collectionName)
         case .PUT   : return handlePUT(request, on: collectionName)
+        case .PATCH : return handlePATCH(request, on: collectionName)
         }
     }
     
@@ -117,8 +118,37 @@ extension Parser {
         }
         return Response(statusCode: 400)
     }
-    
 }
+
+// MARK: - Patch
+extension Parser {
+    func handlePATCH(_ request: Request, on collection: String) -> Response {
+        guard let contentType = request.contentType(), contentType == "application/json" else {
+            return Response(statusCode: 415)
+        }
+
+        guard let idString = request.type().id, let id = Int(idString) else {
+            return Response(statusCode: 404)
+        }
+
+        guard var existingItem = getItem(withId: id, on: collection) else {
+            return Response(statusCode: 404)
+        }
+
+        guard let patchBody = request.body, let patchData = patchBody.data(using: .utf8),
+              let patch = try? JSONSerialization.jsonObject(with: patchData, options: []) as? JSONItem else {
+            return Response(statusCode: 400)
+        }
+
+        for (key, value) in patch {
+            existingItem[key] = value
+        }
+
+        let updatedJSON = jsonString(of: existingItem)
+        return Response(statusCode: 200, rawBody: updatedJSON, contentLength: updatedJSON?.contentLenght())
+    }
+}
+
 
 
 // MARK: - Helpers
@@ -210,6 +240,7 @@ private extension Request {
         case POST
         case DELETE
         case PUT
+        case PATCH
     }
     
     func method() -> HTTPVerb? {

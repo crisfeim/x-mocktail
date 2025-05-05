@@ -342,6 +342,61 @@ final class Tests: XCTestCase {
     }
 }
 
+// MARK: - Patch
+extension Tests {
+    func test_parse_delivers415OnPATCHMissingContentTypeHeader() {
+        let sut = makeSUT(resources: ["recipes": [["id": 1]]])
+        let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        expectNoDifference(response, Response(statusCode: 415))
+    }
+
+    func test_parse_delivers415OnPATCHUnsupportedMediaType() {
+        let sut = makeSUT(resources: ["recipes": [["id": 1]]])
+        let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/weird")
+        let response = sut.parse(request)
+        expectNoDifference(response, Response(statusCode: 415))
+    }
+
+    func test_parse_delivers404OnPATCHNonExistentResource() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json")
+        let response = sut.parse(request)
+        expectNoDifference(response, Response(statusCode: 404))
+    }
+
+    func test_parse_delivers400OnPATCHWithInvalidJSON() {
+        let sut = makeSUT(resources: ["recipes": [["id": 1]]])
+        let request = Request(
+            headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json",
+            body: "not a json"
+        )
+        let response = sut.parse(request)
+        expectNoDifference(response, Response(statusCode: 400))
+    }
+
+    func test_parse_delivers200OnPATCHWithValidJSONBody() throws {
+        let original: JSONItem = ["id": 1, "title": "Old title"]
+        let sut = makeSUT(resources: ["recipes": [original]])
+        let request = Request(
+            headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json",
+            body: #"{"title":"New title"}"#
+        )
+        let response = sut.parse(request)
+        let expected = Response(
+            statusCode: 200,
+            rawBody: #"{"title":"New title","id":1}"#,
+            contentLength: 28
+        )
+        
+        expectNoDifference(
+            try XCTUnwrap(nsDictionary(from: try XCTUnwrap(response.rawBody))),
+            try XCTUnwrap(nsDictionary(from: try XCTUnwrap(expected.rawBody)))
+        )
+    }
+}
+
+
 // MARK: - Helpers
 private extension Tests {
     func makeSUT(resources: [String: JSON] = [:]) -> Parser {
