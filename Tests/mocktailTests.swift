@@ -118,6 +118,22 @@ extension Tests {
         }
     }
     
+    func test_parse_delivers400OnPayloadRequiredVerbsWithEmptyJSON() {
+        let sut = makeSUT(resources: ["recipes": []])
+        
+        ["{}", "{ }", "{\n}", "", nil].forEach { emptyJSONRepresentation in
+            ["POST", "PATCH", "PUT"].forEach { verb in
+                let request = Request(
+                    headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
+                    body: verb
+                )
+                
+                let response = sut.parse(request)
+                let expectedResponse = Response(statusCode: 400)
+                expectNoDifference(response, expectedResponse, "Failed on representation \(emptyJSONRepresentation ?? "null") for verb \(verb)")
+            }
+        }
+    }
     
 }
 
@@ -203,39 +219,10 @@ extension Tests {
         
         expectNoDifference(response, expectedResponse)
     }
-    
 }
 
 // MARK: - POST
 extension Tests {
-    
-    func test_parse_delivers400OnPOSTWithEmptyBody() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(
-            headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
-            body: ""
-        )
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
-    func test_parse_delivers400OnPOSTWithEmptyJSON() {
-        let sut = makeSUT(resources: ["recipes": []])
-        
-        ["{}", "{ }", "{\n}"].forEach {
-            let request = Request(
-                headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
-                body: $0
-            )
-            
-            let response = sut.parse(request)
-            let expectedResponse = Response(statusCode: 400)
-            expectNoDifference(response, expectedResponse)
-        }
-    }
     
     func test_parse_delivers404OnPOSTNonExistingCollection() {
         let sut = makeSUT()
@@ -283,23 +270,7 @@ extension Tests {
    
 // MARK: - PUT
 extension Tests {
-    
-    func test_parse_delivers400OnPUTWithEmptyJSON() {
-        let item = ["id": 1]
-        let sut = makeSUT(resources: ["recipes": [item]])
-        
-        ["{}", "{ }", "{\n}", "", nil].forEach {
-            let request = Request(
-                headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-                body: $0
-            )
-            
-            let response = sut.parse(request)
-            let expectedResponse = Response(statusCode: 400)
-            expectNoDifference(response, expectedResponse, "Failed for \($0 ?? "nil")")
-        }
-    }
-    
+
     func test_parse_delivers200OnPUTNonExistingResource() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json")
@@ -368,22 +339,6 @@ extension Tests {
 
 // MARK: - Patch
 extension Tests {
-    
-    func test_parse_delivers400OnPATCHWithEmptyJSON() {
-        let item = ["id": 1]
-        let sut = makeSUT(resources: ["recipes": [item]])
-        
-        ["{}", "{ }", "{\n}", "", nil].forEach {
-            let request = Request(
-                headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-                body: $0
-            )
-            
-            let response = sut.parse(request)
-            let expectedResponse = Response(statusCode: 400)
-            expectNoDifference(response, expectedResponse, "Failed for \($0 ?? "nil")")
-        }
-    }
     
     func test_parse_delivers404OnPATCHNonExistentResource() {
         let sut = makeSUT(resources: ["recipes": []])
