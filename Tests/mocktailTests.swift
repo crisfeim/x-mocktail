@@ -22,13 +22,17 @@ struct Parser {
         case .allResources where rawBody(for: collectionName) != nil:
             return Response(
                 statusCode: 200,
-                rawBody: rawBody(for: collectionName)!,
-                contentLength: 2
+                rawBody: rawBody(for: collectionName),
+                contentLength: rawBody(for: collectionName)?.contentLenght()
             )
         case .singleResource(let id):
             guard let id = Int(id) else { return Response(statusCode: 400) }
-            let items = resources[collectionName] ?? []
-            return Response(statusCode: items.contains(id) ? 200 : 404)
+            let item = resources[collectionName]?.first(where: { $0 == id })
+            return Response(
+                statusCode: item != nil ? 200 : 404,
+                rawBody: item?.description,
+                contentLength: item?.description.contentLenght()
+            )
         default:
             return Response(statusCode: 404)
         }
@@ -125,6 +129,10 @@ private extension Request {
 }
 
 private extension String {
+    func contentLenght() -> Int {
+        data(using: .utf8)?.count ?? count
+    }
+    
     func removingSpaces() -> String {
         self.replacingOccurrences(of: " ", with: "")
     }
@@ -263,12 +271,24 @@ final class Tests: XCTestCase {
         let expectedResponse = Response(
             statusCode: 200,
             rawBody: "[1,2]",
-            contentLength: 2
+            contentLength: "[1,2]".count
         )
         
         expectNoDifference(response, expectedResponse)
     }
-
+    
+    func test_parser_deliversExpectedItemOnExistentItem() {
+        let sut = makeSUT(resources: ["recipes": [1]])
+        let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        let expectedResponse = Response(
+            statusCode: 200,
+            rawBody: "1",
+            contentLength: 1
+        )
+        
+        expectNoDifference(response, expectedResponse)
+    }
 }
 
 // MARK: - Helpers
