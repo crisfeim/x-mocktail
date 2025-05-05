@@ -406,7 +406,7 @@ final class Tests: XCTestCase {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers415OnUnsupportedMediaType() {
+    func test_parse_delivers415OnPOSTUnsupportedMediaType() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "POST /recipes Content-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
@@ -485,6 +485,15 @@ final class Tests: XCTestCase {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "PUT /recipes HTTP/1.1\nHost: localhost")
         
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 415)
+        
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers415OnPUTUnsupportedMediaType() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "PUT /recipes Content-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 415)
         
