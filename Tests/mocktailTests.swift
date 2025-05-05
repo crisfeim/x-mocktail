@@ -81,7 +81,7 @@ extension Tests {
 // MARK: - GET
 extension Tests {
     
-    func test_parser_delivers200OnExistingCollection() {
+    func test_parser_delivers200GOnGETExistingCollection() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
@@ -89,14 +89,14 @@ extension Tests {
     }
     
     
-    func test_parser_delivers200OnExistingCollectionWithaTrailingSlash() {
+    func test_parser_delivers200OnGETExistingCollectionWithaTrailingSlash() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes/ HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 200)
     }
     
-    func test_parser_deliversEmptyJSONArrayOnEmptyCollection() {
+    func test_parser_deliversEmptyJSONArrayOnGETEmptyCollection() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
@@ -109,7 +109,7 @@ extension Tests {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parser_deliversExpectedArrayOnNonEmptyCollection() {
+    func test_parser_deliversExpectedArrayOnNonGETEmptyCollection() {
         let item1 = ["id": 1]
         let item2 = ["id": 2]
         let sut = makeSUT(resources: ["recipes": [item1, item2]])
@@ -124,7 +124,7 @@ extension Tests {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parser_deliversExpectedItemOnExistentItem() {
+    func test_parser_deliversExpectedItemOnGETExistentItem() {
         let item = ["id": 1]
         let sut = makeSUT(resources: ["recipes": [item]])
         let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
