@@ -147,7 +147,7 @@ extension Parser {
         }
 
         guard let patchBody = request.body, let patchData = patchBody.data(using: .utf8),
-              let patch = try? JSONSerialization.jsonObject(with: patchData, options: []) as? JSONItem else {
+              let patch = try? JSONSerialization.jsonObject(with: patchData, options: []) as? JSONItem, !patch.isEmpty else {
             return Response(statusCode: 400)
         }
 

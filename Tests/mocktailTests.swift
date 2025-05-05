@@ -314,7 +314,7 @@ extension Tests {
             
             let response = sut.parse(request)
             let expectedResponse = Response(statusCode: 400)
-            expectNoDifference(response, expectedResponse)
+            expectNoDifference(response, expectedResponse, "Failed for \($0)")
         }
     }
     
@@ -426,6 +426,22 @@ extension Tests {
         )
         let response = sut.parse(request)
         expectNoDifference(response, Response(statusCode: 400))
+    }
+    
+    func test_parse_delivers400OnPATCHWithEmptyJSON() {
+        let item = ["id": 1]
+        let sut = makeSUT(resources: ["recipes": [item]])
+        
+        ["{}", "{ }", "{\n}"].forEach {
+            let request = Request(
+                headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
+                body: $0
+            )
+            
+            let response = sut.parse(request)
+            let expectedResponse = Response(statusCode: 400)
+            expectNoDifference(response, expectedResponse, "Failed for \($0)")
+        }
     }
 
     func test_parse_delivers200OnPATCHWithValidJSONBody() throws {
