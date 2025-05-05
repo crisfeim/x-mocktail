@@ -47,8 +47,7 @@ struct Parser {
                 contentLength: rawBody(for: collectionName)?.contentLenght()
             )
         case .singleResource(let id):
-            guard let id = Int(id) else { return Response(statusCode: 400) }
-            guard let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
+            guard let id = Int(id), let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
            
             let jsonString =  jsonString(of: item)
             return Response(
@@ -250,11 +249,11 @@ final class Tests: XCTestCase {
         expectNoDifference(response.statusCode, 404)
     }
     
-    func test_parser_delivers400OnMalformedId() {
+    func test_parser_delivers404OnMalformedId() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes/abc HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 400)
+        expectNoDifference(response.statusCode, 404)
     }
     
     func test_parser_delivers404OnNonExistentResource() {
@@ -292,11 +291,11 @@ final class Tests: XCTestCase {
         expectNoDifference(response.statusCode, 200)
     }
     
-    func test_parser_delivers400OnMalformedURL() {
+    func test_parser_delivers404OnMalformedURL() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 400)
+        expectNoDifference(response.statusCode, 404)
     }
     
     func test_parser_deliversEmptyJSONArrayOnEmptyCollection() {
