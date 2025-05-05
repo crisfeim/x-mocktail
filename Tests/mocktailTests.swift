@@ -80,8 +80,11 @@ struct Parser {
     }
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
-        if let _ = request.body {
-            return Response(statusCode: 400)
+        if let item = request.body {
+            return Response(
+                statusCode: isValidJSON(item) ? 201 : 400,
+                rawBody: isValidJSON(item) ? item : nil
+            )
         }
         return Response(statusCode: 415)
     }
@@ -101,6 +104,11 @@ struct Parser {
     private func jsonString(of item: JSONItem) -> String? {
         guard let data = try? JSONSerialization.data(withJSONObject: item) else { return nil }
         return String(data: data, encoding: .utf8)
+    }
+    
+    func isValidJSON(_ string: String) -> Bool {
+        guard let data = string.data(using: .utf8) else { return false }
+        return (try? JSONSerialization.jsonObject(with: data)) != nil
     }
 }
 
@@ -442,6 +450,18 @@ final class Tests: XCTestCase {
         let request = Request(headers: "POST /nonExistingCollection HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 404)
+        
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers201OnValidJSON() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(
+            headers: "POST /recipes HTTP/1.1\nHost: localhost",
+            body: #"{"title":"Fried chicken"}"#
+        )
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 201, rawBody: #"{"title":"Fried chicken"}"#)
         
         expectNoDifference(response, expectedResponse)
     }
