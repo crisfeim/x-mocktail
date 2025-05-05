@@ -19,8 +19,11 @@ struct Router {
     
     private func handleGET() -> Response {
         switch request.route() {
+        case let .resource(id, collection) where !itemExists(id, collection):
+            return Response(statusCode: 404)
         case let .collection(name) where !collectionExists(name):
             return Response(statusCode: 404)
+            
         case let .collection(name):
             let collection = collections[name].flatMap(JSONUtils.jsonToString)
             return Response(
@@ -28,15 +31,14 @@ struct Router {
                 rawBody: collection,
                 contentLength: collection?.contentLenght()
             )
-        case let .resource(item) where !itemExists(item):
-            return Response(statusCode: 404)
-        case let .resource(item) where itemExists(item):
-            let body = (collections[item.collectionName] as? JSONArray)?.getItem(with: item.id).flatMap(JSONUtils.jsonItemToString)
+        case let .resource(id, collection) where itemExists(id, collection):
+            let body = (collections[collection] as? JSONArray)?.getItem(with: id).flatMap(JSONUtils.jsonItemToString)
             return Response(
                 statusCode: 200,
                 rawBody: body,
                 contentLength: body?.contentLenght()
             )
+            
         default: return Response(statusCode: 400)
         }
     }
@@ -45,7 +47,7 @@ struct Router {
         switch request.route() {
         case .collection, .nestedSubroute:
             return Response(statusCode: 400)
-        case let .resource(item) where !itemExists(item):
+        case let .resource(id, collection) where !itemExists(id, collection):
             return Response(statusCode: 404)
         case .resource:
             return Response(statusCode: 204)
@@ -54,7 +56,7 @@ struct Router {
     
     private func handlePUT() -> Response {
         switch request.route() {
-        case let .resource(item) where !itemExists(item):
+        case let .resource(id, collection) where !itemExists(id, collection):
             return Response(statusCode: 200)
         case .resource where request.body == nil:
             return Response(statusCode: 400)
@@ -101,11 +103,11 @@ struct Router {
              .nestedSubroute where !JSONUtils.isValidNonEmptyJSON(request.body),
              .resource       where hasID(request.body):
             return Response(statusCode: 400)
-        case .resource(let item) where !itemExists(item):
+        case let .resource(id, collection) where !itemExists(id, collection):
             return Response(statusCode: 404)
-        case .resource(let item):
+        case let .resource(id, collection):
             let patch = JSONUtils.jsonItem(from: request.body!)!
-            let item = getItem(withId: item.id, on: item.collectionName)!
+            let item = getItem(withId: id, on: collection)!
             let patched = item
             * { item in
                 for (key, value) in patch {
@@ -158,7 +160,7 @@ struct Router {
         return jsonItem?.keys.contains("id") ?? false
     }
     
-    private func itemExists(_ item: (id: String, collectionName: String)) -> Bool {
-        (collections[item.collectionName] as? JSONArray)?.getItem(with: item.id) != nil
+    private func itemExists(_ id: String, _ collectionName: String) -> Bool {
+        (collections[collectionName] as? JSONArray)?.getItem(with: id) != nil
     }
 }

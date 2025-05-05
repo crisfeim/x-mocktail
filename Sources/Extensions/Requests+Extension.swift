@@ -51,22 +51,21 @@ extension Request {
     }
     
     enum RequestType {
-        typealias Item = (id: String, collectionName: String)
         case collection(name: String)
-        case resource(Item)
+        case resource(id: String, collectionName: String)
         case nestedSubroute
         
         init(_ urlComponents: [String]) {
             switch urlComponents.count {
             case 1: self = .collection(name: urlComponents[0])
-            case 2: self = .resource((id: urlComponents[1], collectionName: urlComponents[0]))
+            case 2: self = .resource(id: urlComponents[1], collectionName: urlComponents[0])
             default: self = .nestedSubroute
             }
         }
         
         var id: String? {
-            if case let .resource(item) = self {
-                return item.id
+            if case let .resource(id, _) = self {
+                return id
             }
             return nil
         }
