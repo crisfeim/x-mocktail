@@ -4,6 +4,21 @@ import XCTest
 import CustomDump
 
 typealias JSON = Any
+typealias JSONItem = [String: JSON]
+typealias JSONArray = [JSONItem]
+
+extension JSONArray {
+    func getItem(with id: Int) -> JSONItem? {
+        self.first(where: { $0.getId() == id })
+    }
+}
+
+extension JSONItem {
+    func getId() -> Int? {
+        self["id"] as? Int
+    }
+}
+
 struct Parser {
     let resources: [String: JSON]
     func parse(_ request: Request) -> Response {
@@ -28,11 +43,13 @@ struct Parser {
             )
         case .singleResource(let id):
             guard let id = Int(id) else { return Response(statusCode: 400) }
-            let item = (resources[collectionName] as? [Int])?.first(where: { $0.description == id.description })
+            guard let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
+           
+            let jsonString =  jsonString(of: item)
             return Response(
-                statusCode: item != nil ? 200 : 404,
-                rawBody: item?.description,
-                contentLength: item?.description.contentLenght()
+                statusCode: 200,
+                rawBody: jsonString,
+                contentLength: jsonString?.contentLenght()
             )
         default:
             return Response(statusCode: 404)
@@ -42,6 +59,17 @@ struct Parser {
     private func rawBody(for collectionName: String) -> String? {
         guard let items = resources[collectionName] else { return nil }
         guard let data = try? JSONSerialization.data(withJSONObject: items) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+    
+    private func getItem(withId id: Int, on collection: String) -> JSONItem? {
+        let items = resources[collection] as? JSONArray
+        let item = items?.getItem(with: id)
+        return item
+    }
+    
+    private func jsonString(of item: JSONItem) -> String? {
+        guard let data = try? JSONSerialization.data(withJSONObject: item) else { return nil }
         return String(data: data, encoding: .utf8)
     }
 }
@@ -233,13 +261,6 @@ final class Tests: XCTestCase {
         expectNoDifference(response.statusCode, 200)
     }
     
-    func test_parser_delivers200OnExistingResource() {
-        let sut = makeSUT(resources: ["recipes": [1]])
-        let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 200)
-    }
-    
     func test_parser_delivers200OnExistingCollectionWithaTrailingSlash() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes/ HTTP/1.1\nHost: localhost")
@@ -283,13 +304,14 @@ final class Tests: XCTestCase {
     }
     
     func test_parser_deliversExpectedItemOnExistentItem() {
-        let sut = makeSUT(resources: ["recipes": [1]])
+        let item = ["id": 1]
+        let sut = makeSUT(resources: ["recipes": [item]])
         let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(
             statusCode: 200,
-            rawBody: "1",
-            contentLength: 1
+            rawBody: #"{"id":1}"#,
+            contentLength: #"{"id":1}"#.contentLenght()
         )
         
         expectNoDifference(response, expectedResponse)
