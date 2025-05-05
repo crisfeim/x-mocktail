@@ -272,7 +272,8 @@ extension Tests {
     }
     
     func test_parse_delivers201OnPOSTWithValidJSONBody() throws {
-        let sut = makeSUT(collections: ["recipes": []])
+        let newId = UUID().uuidString
+        let sut = makeSUT(collections: ["recipes": []], idGenerator: {newId})
         let request = Request(
             headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
             body: #"{"title":"Fried chicken"}"#
@@ -280,8 +281,8 @@ extension Tests {
         let response = sut.parse(request)
         let expectedResponse = Response(
             statusCode: 201,
-            rawBody: #"{"id":"1","title":"Fried chicken"}"#,
-            contentLength: 34
+            rawBody: "{\"id\":\"\(newId)\",\"title\":\"Fried chicken\"}",
+            contentLength: 69
         )
         
         expectNoDifference(response.statusCode, expectedResponse.statusCode)
@@ -406,8 +407,12 @@ extension Tests {
 
 // MARK: - Helpers
 private extension Tests {
-    func makeSUT(collections: [String: JSON] = [:]) -> Parser {
-        Parser(collections: collections)
+    func makeSUT(collections: [String: JSON] = [:], idGenerator: @escaping () -> String = defaultGenrator, ) -> Parser {
+        Parser(collections: collections, idGenerator: idGenerator)
+    }
+    
+    static func defaultGenrator() -> String {
+        UUID().uuidString
     }
     
     func anyNonJSONMediaType() -> String {

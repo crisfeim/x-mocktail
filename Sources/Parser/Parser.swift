@@ -3,9 +3,11 @@ import Foundation
 
 public struct Parser {
     private let collections: [String: JSON]
+    private let idGenerator: () -> String
     
-    public init(collections: [String : JSON]) {
+    public init(collections: [String : JSON], idGenerator: @escaping () -> String) {
         self.collections = collections
+        self.idGenerator = idGenerator
     }
     
     public func parse(_ request: Request) -> Response {
@@ -16,7 +18,8 @@ public struct Parser {
         
         let router = Router(
             request: request,
-            collections: collections
+            collections: collections,
+            idGenerator: idGenerator
         )
         
         switch validator.result {

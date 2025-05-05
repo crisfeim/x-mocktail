@@ -6,6 +6,7 @@ import Foundation
 struct Router {
     let request: Request
     let collections: [String: JSON]
+    let idGenerator: () -> String
     func handleRequest() -> Response {
         switch request.method() {
         case
@@ -90,8 +91,8 @@ struct Router {
         case .resource: return .badRequest
         case let .collection(name) where !collectionExists(name):
             return Response(statusCode: 404)
-        case let .collection(name):
-            let jsonItem = request.payloadAsJSONItem() * { $0?["id"] = generateID(forCollection: name) }
+        case .collection:
+            let jsonItem = request.payloadAsJSONItem() * { $0?["id"] = idGenerator() }
             return Response(
                 statusCode: 201,
                 rawBody: jsonItem.flatMap(JSONUtils.jsonItemToString),
@@ -99,11 +100,6 @@ struct Router {
             )
         default: return .badRequest
         }
-    }
-    
-    #warning("Use uuid")
-    private func generateID(forCollection name: String) -> String {
-        ((collections[name] as? JSONArray ?? []).count + 1).description
     }
     
     private func handlePATCH() -> Response {
