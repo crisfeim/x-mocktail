@@ -36,7 +36,7 @@ struct HeadersValidator {
         
         if [Request.HTTPVerb.DELETE, .PATCH].contains(request.method()) {
             
-            guard let id = request.type().id else {
+            guard let id = request.route().id else {
                 return .failure(.badRequest)
             }
                guard let _ = getItem(withId: id, on: collectionName, collections: collections) else {
@@ -63,6 +63,7 @@ public struct Parser {
     
     public func parse(_ request: Request) -> Response {
         let validator = HeadersValidator(request: request, collections: resources)
+      
         switch validator.result {
         case let .success(tuple):
             switch tuple.method {
@@ -84,7 +85,7 @@ public struct Parser {
     
     func requestedResource(_ request: Request) -> JSONItem? {
         guard
-            let id = request.type().id,
+            let id = request.route().id,
             let collectionName = request.collectionName(),
             let existingItem = getItem(withId: id, on: collectionName)
         else { return nil }
@@ -92,19 +93,20 @@ public struct Parser {
     }
 }
 
+
 // MARK: - GET
 extension Parser {
     
     private func handleGET(_ request: Request, on collectionName: String) -> Response {
         let body = rawBody(for: collectionName)
-        switch request.type() {
-        case .allResources where body != nil:
+        switch request.route() {
+        case .collection where body != nil:
             return Response(
                 statusCode: 200,
                 rawBody: body,
                 contentLength: body?.contentLenght()
             )
-        case .singleResource(let id):
+        case .resource(let id):
             guard let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
             
 
@@ -271,7 +273,7 @@ private func *<T>(lhs: T, rhs: (inout T) -> Void) -> T {
     return copy
 }
 
-private extension Request {
+extension Request {
     func normalizedURL() -> String? {
         requestHeaders().first?
             .components(separatedBy: " ")
@@ -319,27 +321,27 @@ private extension Request {
     }
     
     enum RequestType {
-        case allResources
-        case singleResource(id: String)
-        case subroute
+        case collection
+        case resource(id: String)
+        case nestedSubroute
         
         init(_ urlComponents: [String]) {
             switch urlComponents.count {
-            case 1: self = .allResources
-            case 2: self = .singleResource(id: urlComponents[1])
-            default: self = .subroute
+            case 1: self = .collection
+            case 2: self = .resource(id: urlComponents[1])
+            default: self = .nestedSubroute
             }
         }
         
         var id: String? {
-            if case let .singleResource(id) = self {
+            if case let .resource(id) = self {
                 return id
             }
             return nil
         }
     }
     
-    func type() -> RequestType {
+    func route() -> RequestType {
         RequestType(urlComponents())
     }
     
