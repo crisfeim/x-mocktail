@@ -102,6 +102,9 @@ struct Parser {
             return Response(statusCode: 415)
         }
         
+        guard let itemIdString = request.id(), let id = Int(itemIdString), let _ = getItem(withId: id, on: collection) else {
+            return Response(statusCode: 404)
+        }
         return Response(statusCode: 400)
     }
     
@@ -543,9 +546,10 @@ final class Tests: XCTestCase {
     }
     
     func test_parse_delivers400OnPUTWithInvalidJSONBody() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let item = ["id": 1]
+        let sut = makeSUT(resources: ["recipes": [item]])
         let request = Request(
-            headers: "PUT /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
+            headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
             body: "not valid json"
         )
         
@@ -555,11 +559,12 @@ final class Tests: XCTestCase {
     }
     
     func test_parse_delivers400OnPUTWithEmptyJSON() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let item = ["id": 1]
+        let sut = makeSUT(resources: ["recipes": [item]])
         
         ["{}", "{ }", "{\n}"].forEach {
             let request = Request(
-                headers: "PUT /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
+                headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
                 body: $0
             )
             
@@ -570,8 +575,9 @@ final class Tests: XCTestCase {
     }
     
     func test_parse_delivers400OnPUTWithEmptyBody() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "PUT /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json")
+        let item = ["id": 1]
+        let sut = makeSUT(resources: ["recipes": [item]])
+        let request = Request(headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json")
         
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 400)
@@ -581,6 +587,15 @@ final class Tests: XCTestCase {
     func test_parse_delivers404OnPUTToNonExistingCollection() {
         let sut = makeSUT()
         let request = Request(headers: "PUT /nonExistingResource HTTP/1.1\nHost: localhost\nContent-type: application/json")
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 404)
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers404OnPUTToNonExistingResource() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "PUT /recipes/nonexistent HTTP/1.1\nHost: localhost\nContent-type: application/json")
         
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 404)
