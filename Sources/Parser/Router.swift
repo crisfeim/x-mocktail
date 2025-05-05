@@ -11,6 +11,7 @@ struct Router {
         case .GET: return handleGET()
         case .DELETE: return handleDELETE()
         case .PUT: return handlePUT()
+        case .POST: return handlePOST()
         default: return nil
         }
     }
@@ -68,6 +69,13 @@ struct Router {
             )
         default:
             return Response(statusCode: 400)
+        }
+    }
+    
+    private func handlePOST() -> Response? {
+        switch request.route() {
+        case .resource: return Response(statusCode: 400)
+        default: return nil
         }
     }
 
