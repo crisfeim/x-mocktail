@@ -81,12 +81,15 @@ struct Parser {
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
         if let item = request.body {
-            let itemAsDict: JSONItem? = try? JSONSerialization.jsonObject(with: item.data(using: .utf8)!, options: []) as? JSONItem
-            let hasID = itemAsDict?.keys.contains("id") ?? false
+            var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: item.data(using: .utf8)!, options: []) as? JSONItem
+            let hasID = jsonItem?.keys.contains("id") ?? false
             let statusCode = hasID ? 400 : isValidJSON(item) ? 201 : 400
+            let existentItems = resources[collection] as? JSONArray ?? []
+            let newId = existentItems.isEmpty ? 1 : existentItems.count
+            jsonItem?["id"] = newId
             return Response(
                 statusCode: statusCode,
-                rawBody: isValidJSON(item) && !hasID ? item : nil
+                rawBody: isValidJSON(item) && !hasID ? jsonString(of: jsonItem!) : nil
             )
         }
         return Response(statusCode: 415)
@@ -457,16 +460,28 @@ final class Tests: XCTestCase {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers201OnValidJSON() {
+    func test_parse_delivers201OnValidJSON() throws {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
             headers: "POST /recipes HTTP/1.1\nHost: localhost",
             body: #"{"title":"Fried chicken"}"#
         )
         let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 201, rawBody: #"{"title":"Fried chicken"}"#)
+        let expectedResponse = Response(statusCode: 201, rawBody: #"{"id": 1,"title":"Fried chicken"}"#)
         
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response.statusCode, expectedResponse.statusCode)
+        expectNoDifference(response.headers, expectedResponse.headers)
+        
+        let responseBody = try XCTUnwrap(response.rawBody)
+        let expectedBody = try XCTUnwrap(expectedResponse.rawBody)
+    
+        let responseJSON = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(responseBody.utf8)))
+        let expectedJSON = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(expectedBody.utf8)))
+        
+        let responseDict = try XCTUnwrap(responseJSON as? NSDictionary)
+        let expectedDict = try XCTUnwrap(expectedJSON as? NSDictionary)
+        
+        expectNoDifference(responseDict, expectedDict)
     }
     
     func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
