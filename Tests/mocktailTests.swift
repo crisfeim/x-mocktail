@@ -26,13 +26,18 @@ struct Parser {
             return Response(statusCode: 400)
         }
         
-        guard request.method() == "GET" else {
-            return Response(statusCode: 405)
-        }
-        
         guard let collectionName = request.collectionName() else {
             return Response(statusCode: 400)
         }
+        
+        switch request.method() {
+        case "GET"   : return handleGET(request, on: collectionName)
+        case "DELETE": return handleDELETE(request, on: collectionName)
+        default: return Response(statusCode: 405)
+        }
+    }
+    
+    private func handleGET(_ request: Request, on collectionName: String) -> Response {
         
         switch request.type() {
         case .allResources where rawBody(for: collectionName) != nil:
@@ -54,6 +59,17 @@ struct Parser {
         default:
             return Response(statusCode: 404)
         }
+    }
+    
+    private func handleDELETE(_ request: Request, on collection: String) -> Response {
+        guard
+            let idString = request.type().id,
+            let id = Int(idString),
+            let _ = getItem(withId: id, on: collection)
+        else {
+            return Response(statusCode: 404)
+        }
+        return Response(statusCode: 405)
     }
     
     private func rawBody(for collectionName: String) -> String? {
@@ -152,12 +168,20 @@ private extension Request {
             default: self = .subroute
             }
         }
+        
+        var id: String? {
+            if case let .singleResource(id) = self {
+                return id
+            }
+            return nil
+        }
     }
     
     func type() -> RequestType {
         RequestType(urlComponents())
     }
 }
+
 
 private extension String {
     func contentLenght() -> Int {
@@ -313,6 +337,15 @@ final class Tests: XCTestCase {
             rawBody: #"{"id":1}"#,
             contentLength: 8
         )
+        
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers404OnNonExistentItemDeletion() {
+        let sut = makeSUT()
+        let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 404)
         
         expectNoDifference(response, expectedResponse)
     }
