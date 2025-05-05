@@ -337,6 +337,13 @@ extension Tests {
         )
         expectNoDifference(response, expectedResponse)
     }
+    
+    func test_parse_delivers400OnPUTWithNoIdOnRequestURL() {
+        let sut = makeSUT(resources: ["recipes": [:]])
+        let request = Request(headers: "PUT /recipes HTTP/1.1\nHost: localhost\nContent-Type: application/json")
+        let response = sut.parse(request)
+        expectNoDifference(response, Response(statusCode: 400))
+    }
 }
 
 // MARK: - Patch

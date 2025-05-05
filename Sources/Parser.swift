@@ -142,7 +142,11 @@ extension Parser {
 extension Parser {
 
     private func handlePUT(_ request: Request, on collection: String) -> Response {
-        guard let id = request.id(), let _ = getItem(withId: id, on: collection) else {
+        guard let id = request.id() else {
+            return Response(statusCode: 400)
+        }
+        
+        guard let _ = getItem(withId: id, on: collection) else {
             return Response(statusCode: 200, rawBody: request.body)
         }
         
