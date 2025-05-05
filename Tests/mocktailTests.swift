@@ -418,7 +418,7 @@ extension Tests {
         expectNoDifference(response, Response(statusCode: 404))
     }
 
-    func test_parse_delivers400OnPATCHWithInvalidJSON() {
+    func test_parse_delivers400OnPATCHWithInvalidJSONBody() {
         let sut = makeSUT(resources: ["recipes": [["id": 1]]])
         let request = Request(
             headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json",
