@@ -183,7 +183,7 @@ extension Tests {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers400OnPostWithInvalidJSONBody() {
+    func test_parse_delivers400OnPOSTWithInvalidJSONBody() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
             headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
@@ -196,7 +196,7 @@ extension Tests {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers400OnPostWithEmptyBody() {
+    func test_parse_delivers400OnPOSTWithEmptyBody() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
             headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
@@ -224,16 +224,29 @@ extension Tests {
         }
     }
     
-    func test_parse_delivers404OnNonExistingCollection() {
+    func test_parse_delivers404OnPOSTNonExistingCollection() {
         let sut = makeSUT()
         let request = Request(headers: "POST /nonExistingCollection HTTP/1.1\nHost: localhost")
+        
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 404)
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(
+            headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
+            body: #"{"id": 1,"title":"Fried chicken"}"#
+        )
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 400)
         
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers201OnValidJSON() throws {
+    func test_parse_delivers201OnPOSTWithValidJSONBody() throws {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
             headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
@@ -253,20 +266,6 @@ extension Tests {
             try XCTUnwrap(nsDictionary(from: expectedBody))
         )
     }
-    
-    func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(
-            headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
-            body: #"{"id": 1,"title":"Fried chicken"}"#
-        )
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
 }
    
 // MARK: - PUT
@@ -329,18 +328,9 @@ extension Tests {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers404OnPUTToNonExistingCollection() {
+    func test_parse_delivers404OnPUTNonExistingCollection() {
         let sut = makeSUT()
         let request = Request(headers: "PUT /nonExistingResource HTTP/1.1\nHost: localhost\nContent-type: application/json")
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 404)
-        expectNoDifference(response, expectedResponse)
-    }
-    
-    func test_parse_delivers404OnPUTToNonExistingResource() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "PUT /recipes/nonexistent HTTP/1.1\nHost: localhost\nContent-type: application/json")
         
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 404)
@@ -362,6 +352,16 @@ extension Tests {
         )
         expectNoDifference(response, expectedResponse)
     }
+    
+    func test_parse_delivers404OnPUTNonExistingResource() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "PUT /recipes/nonexistent HTTP/1.1\nHost: localhost\nContent-type: application/json")
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 404)
+        expectNoDifference(response, expectedResponse)
+    }
+    
 }
 
 // MARK: - Patch
