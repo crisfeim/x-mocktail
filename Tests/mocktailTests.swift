@@ -97,7 +97,11 @@ struct Parser {
     }
     
     private func handlePUT(_ request: Request, on collection: String) -> Response {
-        Response(statusCode: 415)
+        guard let contentType = request.contentType(), contentType == "application/json" else {
+            return Response(statusCode: 415)
+        }
+        
+        return Response(statusCode: 400)
     }
     
     private func rawBody(for collectionName: String) -> String? {
@@ -430,7 +434,7 @@ final class Tests: XCTestCase {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers400OnInvalidJSONBody() {
+    func test_parse_delivers400OnPostWithInvalidJSONBody() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
             headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
@@ -515,6 +519,18 @@ final class Tests: XCTestCase {
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 415)
         
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers400OnPUTWithInvalidJSONBody() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(
+            headers: "PUT /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
+            body: "not valid json"
+        )
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 400)
         expectNoDifference(response, expectedResponse)
     }
 }
