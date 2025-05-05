@@ -2,6 +2,7 @@
 
 import XCTest
 import CustomDump
+import mocktail
 
 typealias JSON = Any
 typealias JSONItem = [String: JSON]
