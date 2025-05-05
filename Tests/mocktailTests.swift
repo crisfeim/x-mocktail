@@ -306,7 +306,7 @@ extension Tests {
         let item = ["id": 1]
         let sut = makeSUT(resources: ["recipes": [item]])
         
-        ["{}", "{ }", "{\n}"].forEach {
+        ["{}", "{ }", "{\n}", "", nil].forEach {
             let request = Request(
                 headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
                 body: $0
@@ -314,18 +314,8 @@ extension Tests {
             
             let response = sut.parse(request)
             let expectedResponse = Response(statusCode: 400)
-            expectNoDifference(response, expectedResponse, "Failed for \($0)")
+            expectNoDifference(response, expectedResponse, "Failed for \($0 ?? "nil")")
         }
-    }
-    
-    func test_parse_delivers400OnPUTWithEmptyBody() {
-        let item = ["id": 1]
-        let sut = makeSUT(resources: ["recipes": [item]])
-        let request = Request(headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json")
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        expectNoDifference(response, expectedResponse)
     }
     
     func test_parse_delivers404OnPUTNonExistingCollection() {
@@ -411,13 +401,6 @@ extension Tests {
         expectNoDifference(response, Response(statusCode: 415))
     }
 
-    func test_parse_delivers404OnPATCHNonExistentResource() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json")
-        let response = sut.parse(request)
-        expectNoDifference(response, Response(statusCode: 404))
-    }
-
     func test_parse_delivers400OnPATCHWithInvalidJSONBody() {
         let sut = makeSUT(resources: ["recipes": [["id": 1]]])
         let request = Request(
@@ -432,7 +415,7 @@ extension Tests {
         let item = ["id": 1]
         let sut = makeSUT(resources: ["recipes": [item]])
         
-        ["{}", "{ }", "{\n}"].forEach {
+        ["{}", "{ }", "{\n}", "", nil].forEach {
             let request = Request(
                 headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
                 body: $0
@@ -440,9 +423,17 @@ extension Tests {
             
             let response = sut.parse(request)
             let expectedResponse = Response(statusCode: 400)
-            expectNoDifference(response, expectedResponse, "Failed for \($0)")
+            expectNoDifference(response, expectedResponse, "Failed for \($0 ?? "nil")")
         }
     }
+    
+    func test_parse_delivers404OnPATCHNonExistentResource() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json")
+        let response = sut.parse(request)
+        expectNoDifference(response, Response(statusCode: 404))
+    }
+
 
     func test_parse_delivers200OnPATCHWithValidJSONBody() throws {
         let original: JSONItem = ["id": 1, "title": "Old title"]
