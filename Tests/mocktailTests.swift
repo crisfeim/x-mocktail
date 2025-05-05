@@ -22,16 +22,12 @@ extension JSONItem {
 struct Parser {
     let resources: [String: JSON]
     func parse(_ request: Request) -> Response {
-        guard request.headers.contains("Host") else {
+        guard request.headers.contains("Host"), let collectionName = request.collectionName()  else {
             return Response(statusCode: 400)
         }
         
         guard let method = request.method() else {
             return Response(statusCode: 405)
-        }
-        
-        guard let collectionName = request.collectionName() else {
-            return Response(statusCode: 400)
         }
         
         guard resources.keys.contains(collectionName) else {
@@ -146,7 +142,7 @@ private extension Response {
     }
 }
 
-func *<T>(lhs: T, rhs: (inout T) -> Void) -> T {
+private func *<T>(lhs: T, rhs: (inout T) -> Void) -> T {
     var copy = lhs
     rhs(&copy)
     return copy
