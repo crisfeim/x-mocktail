@@ -248,11 +248,7 @@ fileprivate extension Array {
         return self[index]
     }
 }
-struct Response: Equatable {
-    let statusCode: Int
-    let headers: [String: String]
-    let rawBody: String?
-}
+
 
 struct Request {
     let headers: String
