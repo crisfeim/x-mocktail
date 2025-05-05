@@ -38,6 +38,7 @@ struct Parser {
         case .GET   : return handleGET(request, on: collectionName)
         case .DELETE: return handleDELETE(request, on: collectionName)
         case .POST  : return handlePOST(request, on: collectionName)
+        case .PUT   : return handlePUT(request, on: collectionName)
         }
     }
     
@@ -89,6 +90,10 @@ struct Parser {
             )
         }
         return Response(statusCode: 415)
+    }
+    
+    private func handlePUT(_ request: Request, on collection: String) -> Response {
+        Response(statusCode: 415)
     }
     
     private func rawBody(for collectionName: String) -> String? {
@@ -176,6 +181,7 @@ private extension Request {
         case GET
         case POST
         case DELETE
+        case PUT
     }
     
     func method() -> HTTPVerb? {
@@ -391,7 +397,7 @@ final class Tests: XCTestCase {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers415OnMissingContentType() {
+    func test_parse_delivers415OnPOSTMissingContentTypeHeader() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "POST /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
@@ -471,6 +477,16 @@ final class Tests: XCTestCase {
         
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 400)
+        
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers415OnPUTMissingContentTypeHeader() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "PUT /recipes HTTP/1.1\nHost: localhost")
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 415)
         
         expectNoDifference(response, expectedResponse)
     }
