@@ -82,6 +82,7 @@ struct Parser {
         }
         
         if let item = request.body {
+            guard !item.isEmpty, item.removingSpaces().removingBreaklines() != "{}" else { return Response(statusCode: 400) }
             var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: item.data(using: .utf8)!, options: []) as? JSONItem
             let hasID = jsonItem?.keys.contains("id") ?? false
             let statusCode = hasID ? 400 : isValidJSON(item) ? 201 : 400
@@ -244,6 +245,10 @@ private extension Request {
 private extension String {
     func contentLenght() -> Int {
         data(using: .utf8)?.count ?? count
+    }
+    
+    func removingBreaklines() -> String {
+        self.replacingOccurrences(of: "\n", with: "")
     }
     
     func removingSpaces() -> String {
@@ -458,6 +463,21 @@ final class Tests: XCTestCase {
         let expectedResponse = Response(statusCode: 400)
         
         expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers400OnPOSTWithEmptyJSON() {
+        let sut = makeSUT(resources: ["recipes": []])
+        
+        ["{}", "{ }", "{\n}"].forEach {
+            let request = Request(
+                headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
+                body: $0
+            )
+            
+            let response = sut.parse(request)
+            let expectedResponse = Response(statusCode: 400)
+            expectNoDifference(response, expectedResponse)
+        }
     }
     
     func test_parse_delivers404OnNonExistingCollection() {
