@@ -3,7 +3,7 @@
 import XCTest
 import CustomDump
 
-typealias JSON = [Int]
+typealias JSON = Any
 struct Parser {
     let resources: [String: JSON]
     func parse(_ request: Request) -> Response {
@@ -28,7 +28,7 @@ struct Parser {
             )
         case .singleResource(let id):
             guard let id = Int(id) else { return Response(statusCode: 400) }
-            let item = resources[collectionName]?.first(where: { $0 == id })
+            let item = (resources[collectionName] as? [Int])?.first(where: { $0.description == id.description })
             return Response(
                 statusCode: item != nil ? 200 : 404,
                 rawBody: item?.description,
@@ -40,7 +40,7 @@ struct Parser {
     }
     
     private func rawBody(for collectionName: String) -> String? {
-        resources[collectionName]?.description.removingSpaces()
+        (resources[collectionName] as? [Int])?.description.removingSpaces()
     }
 }
 
