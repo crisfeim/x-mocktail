@@ -305,7 +305,7 @@ extension Tests {
     }
     
     func test_parse_delivers200OnPUTWithValidJSONBodyAndMatchingURLId() {
-        let item = ["id": 1]
+        let item = ["id": "1"]
         let sut = makeSUT(resources: ["recipes": [item]])
         let request = Request(
             headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
@@ -315,13 +315,14 @@ extension Tests {
         let response = sut.parse(request)
         let expectedResponse = Response(
             statusCode: 200,
-            rawBody: #"{"id":1,"title":"New title"}"#
+            rawBody: #"{"id":1,"title":"New title"}"#,
+            contentLength: 28
         )
         expectNoDifference(response, expectedResponse)
     }
     
     func test_parse_delivers200OnPUTWithValidJSONBody() {
-        let item = ["id": 1]
+        let item = ["id": "1"]
         let sut = makeSUT(resources: ["recipes": [item]])
         let request = Request(
             headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
@@ -331,7 +332,8 @@ extension Tests {
         let response = sut.parse(request)
         let expectedResponse = Response(
             statusCode: 200,
-            rawBody: #"{"title":"New title"}"#
+            rawBody: #"{"title":"New title"}"#,
+            contentLength: 21
         )
         expectNoDifference(response, expectedResponse)
     }

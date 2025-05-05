@@ -8,6 +8,7 @@ struct Router {
         switch request.method() {
         case .GET: return handleGET()
         case .DELETE: return handleDELETE()
+        case .PUT: return handlePUT()
         default: return nil
         }
     }
@@ -48,6 +49,22 @@ struct Router {
             return Response(statusCode: 404)
         case .resource:
             return Response(statusCode: 204)
+        }
+    }
+    
+    private func handlePUT() -> Response? {
+        switch request.route() {
+        case let .resource(item) where !itemExists(item):
+            return Response(statusCode: 200)
+        case .resource where request.body == nil:
+            return Response(statusCode: 400)
+        case .resource where JSONUtils.isValidJSON(request.body!):
+            return Response(
+                statusCode: 200,
+                rawBody:  request.body,
+                contentLength: request.body?.contentLenght()
+            )
+        default: return nil
         }
     }
 
@@ -186,7 +203,7 @@ extension Parser {
             jsonItem?["id"] = newId
             return Response(
                 statusCode: statusCode,
-                rawBody: isValidJSON(body) && !hasID ? JSONUtils.jsonItemToString(jsonItem!) : nil
+                rawBody: JSONUtils.isValidJSON(body) && !hasID ? JSONUtils.jsonItemToString(jsonItem!) : nil
             )
         } else {
             return Response(statusCode: 400)
@@ -262,6 +279,11 @@ enum JSONUtils {
         guard let data = try? JSONSerialization.data(withJSONObject: item) else { return nil }
         return String(data: data, encoding: .utf8)
     }
+    
+    static func isValidJSON(_ string: String) -> Bool {
+        guard let data = string.data(using: .utf8) else { return false }
+        return (try? JSONSerialization.jsonObject(with: data)) != nil
+    }
 }
 
 // MARK: - Helpers
@@ -285,13 +307,8 @@ extension Parser {
     }
     
     private func isValidNonEmptyJSON(_ body: String?) -> Bool {
-        guard let body = body, isValidJSON(body) else { return false }
+        guard let body = body, JSONUtils.isValidJSON(body) else { return false }
         return body.removingSpaces().removingBreaklines() != "{}"
-    }
-    
-    private func isValidJSON(_ string: String) -> Bool {
-        guard let data = string.data(using: .utf8) else { return false }
-        return (try? JSONSerialization.jsonObject(with: data)) != nil
     }
 }
 
