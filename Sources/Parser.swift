@@ -147,8 +147,11 @@ extension Parser {
             return Response(statusCode: 404)
         }
 
-        guard let patchBody = request.body, let patchData = patchBody.data(using: .utf8), patchBody.removingSpaces().removingBreaklines() != "{}",
-              let patch = try? JSONSerialization.jsonObject(with: patchData, options: []) as? JSONItem, !patch.isEmpty else {
+        guard
+            let patchBody = request.body,
+            patchBody.removingSpaces().removingBreaklines() != "{}",
+            let patchItem = jsonItem(from: patchBody)
+        else {
             return Response(statusCode: 400)
         }
         
@@ -161,7 +164,7 @@ extension Parser {
             }
         }
 
-        for (key, value) in patch {
+        for (key, value) in patchItem {
             existingItem[key] = value
         }
 

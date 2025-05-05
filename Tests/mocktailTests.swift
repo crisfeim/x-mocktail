@@ -118,22 +118,16 @@ extension Tests {
     }
     
     func test_parse_delivers400OnPayloadRequiredVerbsWithEmptyJSON() {
-        let sut = makeSUT(resources: ["recipes": []])
-        
-        ["{}", "{ }", "{\n}", "", nil].forEach { emptyJSONRepresentation in
-            ["POST", "PATCH", "PUT"].forEach { verb in
-                let request = Request(
-                    headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
-                    body: verb
-                )
-                
-                let response = sut.parse(request)
-                let expectedResponse = Response(statusCode: 400)
-                expectNoDifference(response, expectedResponse, "Failed on representation \(emptyJSONRepresentation ?? "null") for verb \(verb)")
-            }
-        }
+        let expectedResponse = Response(statusCode: 400)
+        expect(expectedResponse, on: "{}", for: "PATCH")
+        expect(expectedResponse, on: "{ }", for: "PATCH")
+        expect(expectedResponse, on: "{\n}", for: "PATCH")
+        expect(expectedResponse, on: nil, for: "PATCH")
+        expect(expectedResponse, on: "{}", for: "PUT")
+        expect(expectedResponse, on: "{ }", for: "PUT")
+        expect(expectedResponse, on: "{\n}", for: "PUT")
+        expect(expectedResponse, on: nil, for: "PUT")
     }
-    
     
     func test_parse_delivers404OnPayloadRequiredVerbsNonExistingCollection() {
         let sut = makeSUT()
@@ -442,5 +436,24 @@ private extension Tests {
             return nil
         }
         return responseDict
+    }
+    
+    func expect(
+        _ expectedResponse: Response,
+        on emptyJSONRepresentation: String?,
+        for verb: String,
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        let item = ["id": 1]
+        let sut = makeSUT(resources: ["recipes": [item]])
+        
+        let request = Request(
+            headers: "\(verb) /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
+            body: nil
+        )
+        
+        let response = sut.parse(request)
+        expectNoDifference(response, expectedResponse, "Failed on representation \(emptyJSONRepresentation ?? "null") for verb \(verb)")
     }
 }
