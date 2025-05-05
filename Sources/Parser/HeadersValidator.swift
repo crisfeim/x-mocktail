@@ -15,34 +15,34 @@ struct HeadersValidator {
     let request: Request
     let collections: [String: JSON]
     
-    typealias Result = Swift.Result<Void, ValidationError>
+    typealias Result = ValidationError?
     
     var result: Result {
         guard request.headers.contains("Host"), let collectionName = request.collectionName()  else {
-            return .failure(.badRequest)
+            return .badRequest
         }
         
         guard let _ = request.method() else {
-            return .failure(.unsupportedMethod)
+            return .unsupportedMethod
         }
         
         if request.payloadRequiredRequest() {
             guard let contentType = request.contentType(), contentType == "application/json" else {
-                return .failure(.missingOrWrongMediaType)
+                return .missingOrWrongMediaType
             }
         }
         
         if [Request.HTTPVerb.DELETE, .PATCH].contains(request.method()) {
             
             guard let id = request.route().id else {
-                return .failure(.badRequest)
+                return .badRequest
             }
                guard let _ = getItem(withId: id, on: collectionName, collections: collections) else {
-             return .failure(.notFound)
+             return .notFound
          }
         }
         
-        return .success(())
+        return nil
     }
     
     func getItem(withId id: String, on collectionName: String, collections: [String: JSON]) -> JSONItem? {

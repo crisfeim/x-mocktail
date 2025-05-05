@@ -20,9 +20,9 @@ public struct Parser {
         )
         
         switch validator.result {
-        case .success where request.collectionName() != nil:
+        case .none where request.collectionName() != nil:
             return router.handleRequest()
-        case .failure(let error):
+        case let .some(error):
             return Response(statusCode: error.rawValue)
         default: return Response(statusCode: 404)
         }
