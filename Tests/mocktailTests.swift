@@ -132,7 +132,7 @@ extension Tests {
     func test_parse_delivers404OnPayloadRequiredVerbsNonExistingCollection() {
         let sut = makeSUT()
         ["POST", "PATCH", "PUT"].forEach { verb in
-            let request = Request(headers: "\(verb) /nonExistingCollection HTTP/1.1\nHost: localhost", body: "any body")
+            let request = Request(headers: "\(verb) /nonExistingCollection HTTP/1.1\nHost: localhost", body: "a")
             
             let response = sut.parse(request)
             let expectedResponse = Response(statusCode: 404)

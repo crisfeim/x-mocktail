@@ -29,20 +29,19 @@ public struct Parser {
         case .PATCH : return handlePATCH(request, on: collectionName)
         }
     }
-    
 }
 
 // MARK: - GET
 extension Parser {
     
     private func handleGET(_ request: Request, on collectionName: String) -> Response {
-        
+        let body = rawBody(for: collectionName)
         switch request.type() {
-        case .allResources where rawBody(for: collectionName) != nil:
+        case .allResources where body != nil:
             return Response(
                 statusCode: 200,
-                rawBody: rawBody(for: collectionName),
-                contentLength: rawBody(for: collectionName)?.contentLenght()
+                rawBody: body,
+                contentLength: body?.contentLenght()
             )
         case .singleResource(let id):
             guard let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
@@ -83,11 +82,10 @@ extension Parser {
             return Response(statusCode: 415)
         }
         
-        if let body = request.body {
-            guard !body.isEmpty, body.removingSpaces().removingBreaklines() != "{}" else { return Response(statusCode: 400) }
+        if let body = request.body, isValidNonEmptyJSON(body) {
             var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: body.data(using: .utf8)!, options: []) as? JSONItem
             let hasID = jsonItem?.keys.contains("id") ?? false
-            let statusCode = hasID ? 400 : isValidJSON(body) ? 201 : 400
+            let statusCode = hasID ? 400 : 201
             let existentItems = resources[collection] as? JSONArray ?? []
             let newId = existentItems.isEmpty ? 1 : existentItems.count
             jsonItem?["id"] = newId
@@ -95,8 +93,9 @@ extension Parser {
                 statusCode: statusCode,
                 rawBody: isValidJSON(body) && !hasID ? jsonString(of: jsonItem!) : nil
             )
+        } else {
+            return Response(statusCode: 400)
         }
-        return Response(statusCode: 415)
     }
 }
 
@@ -112,7 +111,7 @@ extension Parser {
             return Response(statusCode: 200, rawBody: request.body)
         }
         
-        if let body = request.body, isValidJSON(body), body.removingSpaces().removingBreaklines() != "{}" {
+        if let body = request.body, isValidNonEmptyJSON(body) {
             if let bodyId = jsonItem(from: body)?["id"] as? String {
                 if bodyId == id {
                     return Response(statusCode: 200, rawBody: body)
@@ -133,6 +132,8 @@ extension Parser {
 
 // MARK: - Patch
 extension Parser {
+
+    
     func handlePATCH(_ request: Request, on collection: String) -> Response {
         guard let contentType = request.contentType(), contentType == "application/json" else {
             return Response(statusCode: 415)
@@ -148,13 +149,13 @@ extension Parser {
 
         guard
             let patchBody = request.body,
-            patchBody.removingSpaces().removingBreaklines() != "{}",
+            isValidNonEmptyJSON(patchBody),
             let patchItem = jsonItem(from: patchBody)
         else {
             return Response(statusCode: 400)
         }
         
-        if let bodyId = jsonItem(from: patchBody)?["id"] as? String {
+        if let bodyId = patchItem["id"] as? String {
             if bodyId == id {
                 return Response(statusCode: 200, rawBody: patchBody)
             }
@@ -199,7 +200,12 @@ extension Parser {
         return try? JSONSerialization.jsonObject(with: data, options: []) as? JSONItem
     }
     
-    func isValidJSON(_ string: String) -> Bool {
+    private func isValidNonEmptyJSON(_ body: String?) -> Bool {
+        guard let body = body, isValidJSON(body) else { return false }
+        return body.removingSpaces().removingBreaklines() != "{}"
+    }
+    
+    private func isValidJSON(_ string: String) -> Bool {
         guard let data = string.data(using: .utf8) else { return false }
         return (try? JSONSerialization.jsonObject(with: data)) != nil
     }
