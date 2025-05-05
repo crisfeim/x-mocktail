@@ -26,15 +26,22 @@ struct Parser {
             return Response(statusCode: 400)
         }
         
+        guard let method = request.method() else {
+            return Response(statusCode: 405)
+        }
+        
         guard let collectionName = request.collectionName() else {
             return Response(statusCode: 400)
         }
         
-        switch request.method() {
-        case "GET"   : return handleGET(request, on: collectionName)
-        case "DELETE": return handleDELETE(request, on: collectionName)
-        case "POST"  : return handlePOST(request, on: collectionName)
-        default: return Response(statusCode: 405)
+        guard resources.keys.contains(collectionName) else {
+            return Response(statusCode: 404)
+        }
+        
+        switch method {
+        case .GET   : return handleGET(request, on: collectionName)
+        case .DELETE: return handleDELETE(request, on: collectionName)
+        case .POST  : return handlePOST(request, on: collectionName)
         }
     }
     
@@ -155,8 +162,17 @@ private extension Request {
         urlComponents().first
     }
     
-    func method() -> String? {
-        requestHeaders().first?.components(separatedBy: " ").first
+    enum HTTPVerb: String {
+        case GET
+        case POST
+        case DELETE
+    }
+    
+    func method() -> HTTPVerb? {
+        guard let verb = requestHeaders().first?.components(separatedBy: " ").first else {
+            return nil
+        }
+        return HTTPVerb(rawValue: verb)
     }
     
     func allItems() -> Bool {
@@ -227,7 +243,7 @@ struct Response: Equatable {
 struct Request {
     let headers: String
     let body: String?
-    
+
     init(headers: String, body: String? = nil) {
         self.headers = headers
         self.body = body
@@ -378,7 +394,7 @@ final class Tests: XCTestCase {
     }
     
     func test_parse_delivers415OnMissingContentType() {
-        let sut = makeSUT()
+        let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "POST /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 415)
@@ -387,7 +403,7 @@ final class Tests: XCTestCase {
     }
     
     func test_parse_delivers415OnUnsupportedMediaType() {
-        let sut = makeSUT()
+        let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "POST /recipes Content-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 415)
@@ -396,7 +412,7 @@ final class Tests: XCTestCase {
     }
     
     func test_parse_delivers400OnInvalidJSONBody() {
-        let sut = makeSUT()
+        let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
             headers: "POST /recipes Content-Type: application/json\nHost: localhost",
             body: "invalid json"
@@ -409,7 +425,7 @@ final class Tests: XCTestCase {
     }
     
     func test_parse_delivers400OnEmptyJSONBody() {
-        let sut = makeSUT()
+        let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
             headers: "POST /recipes Content-Type: application/json\nHost: localhost",
             body: ""
@@ -417,6 +433,15 @@ final class Tests: XCTestCase {
         
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 400)
+        
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers404OnNonExistingCollection() {
+        let sut = makeSUT()
+        let request = Request(headers: "POST /nonExistingCollection HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 404)
         
         expectNoDifference(response, expectedResponse)
     }
