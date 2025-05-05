@@ -149,7 +149,7 @@ extension Tests {
     
     func test_parse_delivers400OnIdRequiredRequestWithNoIdOnRequestURL() {
         let sut = makeSUT(resources: ["recipes": [:]])
-        ["DELETE", "POST", "PATCH", "PUT"].forEach { verb in
+        ["DELETE", "PATCH", "PUT"].forEach { verb in
             let request = Request(headers: "\(verb) /recipes HTTP/1.1\nHost: localhost\nContent-Type: application/json", body: "any payload")
             let response = sut.parse(request)
             expectNoDifference(response, Response(statusCode: 400), "Expect failed for \(verb)")
@@ -277,7 +277,11 @@ extension Tests {
             body: #"{"title":"Fried chicken"}"#
         )
         let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 201, rawBody: #"{"id": 1,"title":"Fried chicken"}"#)
+        let expectedResponse = Response(
+            statusCode: 201,
+            rawBody: #"{"id":1,"title":"Fried chicken"}"#,
+            contentLength: 32
+        )
         
         expectNoDifference(response.statusCode, expectedResponse.statusCode)
         expectNoDifference(response.headers, expectedResponse.headers)

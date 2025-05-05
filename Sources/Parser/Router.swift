@@ -72,12 +72,28 @@ struct Router {
         }
     }
     
-    private func handlePOST() -> Response? {
+    private func handlePOST() -> Response {
         switch request.route() {
         case .resource: return Response(statusCode: 400)
         case let .collection(name) where !collectionExists(name):
             return Response(statusCode: 404)
-        default: return nil
+        case .collection where !JSONUtils.isValidJSON(request.body!):
+            return Response(statusCode: 400)
+        case .collection where containsItemId(request.body!):
+            return Response(statusCode: 400)
+        case let .collection(name):
+            var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: request.body!.data(using: .utf8)!, options: []) as? JSONItem
+            let newId = UUID().uuidString
+            #warning("Use uuid")
+            jsonItem?["id"] = (collections[name] as? JSONArray ?? []).count + 1
+            
+            
+            return Response(
+                statusCode: 201,
+                rawBody: JSONUtils.jsonItemToString(jsonItem!),
+                contentLength: JSONUtils.jsonItemToString(jsonItem!)?.contentLenght()
+            )
+        default: return Response(statusCode: 400)
         }
     }
 
@@ -88,6 +104,12 @@ struct Router {
     private func collectionIsEmpty(_ collectionName: String) -> Bool {
         let collection = collections[collectionName] as? JSONArray
         return collection?.isEmpty ?? true
+    }
+    
+    private func containsItemId(_ body: String) -> Bool {
+        #warning("move to jsonutils")
+        var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: body.data(using: .utf8)!, options: []) as? JSONItem
+        return jsonItem?.keys.contains("id") ?? false
     }
     
     private func itemExists(_ item: (id: String, collectionName: String)) -> Bool {
