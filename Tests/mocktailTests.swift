@@ -103,7 +103,7 @@ extension Tests {
     }
  
     func test_parse_delivers400OnPayloadAndIdRequiredVerbsWithInvalidJSONBody() {
-        let sut = makeSUT(resources: ["recipes": [["id": 1]]])
+        let sut = makeSUT(resources: ["recipes": [["id": "1"]]])
         
         ["PATCH", "PUT"].forEach { verb in
             let request = Request(
@@ -188,14 +188,14 @@ extension Tests {
     }
     
     func test_parser_deliversExpectedItemOnGETExistentItem() {
-        let item = ["id": 1]
+        let item = ["id": "1"]
         let sut = makeSUT(resources: ["recipes": [item]])
         let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(
             statusCode: 200,
-            rawBody: #"{"id":1}"#,
-            contentLength: 8
+            rawBody: #"{"id":"1"}"#,
+            contentLength: 10
         )
         
         expectNoDifference(response, expectedResponse)
@@ -215,7 +215,7 @@ extension Tests {
     }
     
     func test_parse_delivers204OnSuccessfulItemDeletion() {
-        let item = ["id": 1]
+        let item = ["id": "1"]
         let sut = makeSUT(resources: ["recipes": [item]])
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
@@ -298,12 +298,12 @@ extension Tests {
     }
     
     func test_parse_delivers400OnPUTWithJSONBodyWithDifferentItemId() {
-        let item1: JSONItem = ["id": 1, "title": "KFC Chicken"]
-        let item2: JSONItem = ["id": 2, "title": "Sushi rolls"]
+        let item1: JSONItem = ["id": "1", "title": "KFC Chicken"]
+        let item2: JSONItem = ["id": "2", "title": "Sushi rolls"]
         let sut = makeSUT(resources: ["recipes": [item1, item2]])
         let request = Request(
             headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-            body: #"{"id":2,"title":"Fried chicken"}"#
+            body: #"{"id":"2","title":"Fried chicken"}"#
         )
         
         let response = sut.parse(request)
@@ -364,13 +364,14 @@ extension Tests {
         expectNoDifference(response, expectedResponse)
     }
     
+#warning("This test can be unified with PUT test")
     func test_parse_delivers400OnPATCHWithJSONBodyWithDifferentItemId() {
-        let item1: JSONItem = ["id": 1, "title": "KFC Chicken"]
-        let item2: JSONItem = ["id": 2, "title": "Sushi rolls"]
+        let item1: JSONItem = ["id": "1", "title": "KFC Chicken"]
+        let item2: JSONItem = ["id": "2", "title": "Sushi rolls"]
         let sut = makeSUT(resources: ["recipes": [item1, item2]])
         let request = Request(
             headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-            body: #"{"id":2,"title":"Fried chicken"}"#
+            body: #"{"id":"2","title":"Fried chicken"}"#
         )
         
         let response = sut.parse(request)
@@ -380,24 +381,24 @@ extension Tests {
     }
     
     func test_parse_delivers200OnPATCHWithValidJSONBodyAndMatchingURLId() {
-        let item = ["id": 1]
+        let item = ["id": "1"]
         let sut = makeSUT(resources: ["recipes": [item]])
         let request = Request(
             headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-            body: #"{"id":1,"title":"New title"}"#
+            body: #"{"id":"1","title":"New title"}"#
         )
         
         let response = sut.parse(request)
         let expectedResponse = Response(
             statusCode: 200,
-            rawBody: #"{"id":1,"title":"New title"}"#
+            rawBody: #"{"id":"1","title":"New title"}"#
         )
         expectNoDifference(response, expectedResponse)
     }
 
 
     func test_parse_delivers200OnPATCHWithValidJSONBody() throws {
-        let original: JSONItem = ["id": 1, "title": "Old title"]
+        let original: JSONItem = ["id": "1", "title": "Old title"]
         let sut = makeSUT(resources: ["recipes": [original]])
         let request = Request(
             headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json",
@@ -406,7 +407,7 @@ extension Tests {
         let response = sut.parse(request)
         let expected = Response(
             statusCode: 200,
-            rawBody: #"{"title":"New title","id":1}"#,
+            rawBody: #"{"title":"New title","id":"1"}"#,
             contentLength: 28
         )
         
@@ -445,7 +446,7 @@ private extension Tests {
         file: StaticString = #file,
         line: UInt = #line
     ) {
-        let item = ["id": 1]
+        let item = ["id": "1"]
         let sut = makeSUT(resources: ["recipes": [item]])
         
         let request = Request(

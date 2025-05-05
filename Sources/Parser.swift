@@ -45,7 +45,7 @@ extension Parser {
                 contentLength: rawBody(for: collectionName)?.contentLenght()
             )
         case .singleResource(let id):
-            guard let id = Int(id), let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
+            guard let item = getItem(withId: id, on: collectionName) else { return Response(statusCode: 404) }
             
 
             let jsonString =  jsonString(of: item)
@@ -66,8 +66,7 @@ extension Parser {
 extension Parser {
     private func handleDELETE(_ request: Request, on collection: String) -> Response {
         guard
-            let idString = request.type().id,
-            let id = Int(idString),
+            let id = request.type().id,
             let _ = getItem(withId: id, on: collection)
         else {
             return Response(statusCode: 404)
@@ -109,12 +108,12 @@ extension Parser {
             return Response(statusCode: 415)
         }
         
-        guard let itemIdString = request.id(), let id = Int(itemIdString), let _ = getItem(withId: id, on: collection) else {
+        guard let id = request.id(), let _ = getItem(withId: id, on: collection) else {
             return Response(statusCode: 200, rawBody: request.body)
         }
         
         if let body = request.body, isValidJSON(body), body.removingSpaces().removingBreaklines() != "{}" {
-            if let bodyId = jsonItem(from: body)?["id"] as? Int {
+            if let bodyId = jsonItem(from: body)?["id"] as? String {
                 if bodyId == id {
                     return Response(statusCode: 200, rawBody: body)
                 }
@@ -139,7 +138,7 @@ extension Parser {
             return Response(statusCode: 415)
         }
 
-        guard let idString = request.type().id, let id = Int(idString) else {
+        guard let id = request.type().id else {
             return Response(statusCode: 404)
         }
 
@@ -155,7 +154,7 @@ extension Parser {
             return Response(statusCode: 400)
         }
         
-        if let bodyId = jsonItem(from: patchBody)?["id"] as? Int {
+        if let bodyId = jsonItem(from: patchBody)?["id"] as? String {
             if bodyId == id {
                 return Response(statusCode: 200, rawBody: patchBody)
             }
@@ -184,7 +183,7 @@ extension Parser {
         return String(data: data, encoding: .utf8)
     }
     
-    private func getItem(withId id: Int, on collection: String) -> JSONItem? {
+    private func getItem(withId id: String, on collection: String) -> JSONItem? {
         let items = resources[collection] as? JSONArray
         let item = items?.getItem(with: id)
         return item
