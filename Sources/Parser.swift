@@ -13,7 +13,7 @@ struct HeadersValidator {
     let request: Request
     let collections: [String: JSON]
     
-     typealias ValidationResult = Result<(method: Request.HTTPVerb, collectionName: String), ValidationError>
+     typealias ValidationResult = Result<Void, ValidationError>
     
     var result: ValidationResult {
         guard request.headers.contains("Host"), let collectionName = request.collectionName()  else {
@@ -44,7 +44,7 @@ struct HeadersValidator {
          }
         }
         
-        return .success((method, collectionName))
+        return .success(())
     }
     
     func getItem(withId id: String, on collectionName: String, collections: [String: JSON]) -> JSONItem? {
@@ -65,21 +65,23 @@ public struct Parser {
         let validator = HeadersValidator(request: request, collections: resources)
       
         switch validator.result {
-        case let .success(tuple):
-            switch tuple.method {
-            case .GET   : return handleGET(request, on: tuple.collectionName)
+        case .success where request.collectionName() != nil:
+            let collectionName = request.collectionName()!
+            switch request.method() {
+            case .GET   : return handleGET(request, on: collectionName)
             case .DELETE: return Response(statusCode: 204)
-            case .POST  : return handlePOST(request, on: tuple.collectionName)
-            case .PUT   : return handlePUT(request, on: tuple.collectionName)
+            case .POST  : return handlePOST(request, on: collectionName)
+            case .PUT   : return handlePUT(request, on: collectionName)
             case .PATCH where requestedResource(request) != nil:
                 return handlePATCH(
                     request,
-                    on: tuple.collectionName,
+                    on: collectionName,
                     for: requestedResource(request)!
                 )
             default: return Response(statusCode: 404)
             }
         case .failure(let error): return Response(statusCode: error.rawValue)
+        default: return Response(statusCode: 404)
         }
     }
     
