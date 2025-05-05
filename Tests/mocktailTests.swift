@@ -447,7 +447,7 @@ final class Tests: XCTestCase {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers400OnEmptyJSONBody() {
+    func test_parse_delivers400OnPostWithEmptyBody() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
             headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
