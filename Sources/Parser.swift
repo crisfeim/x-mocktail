@@ -1,6 +1,24 @@
 // Created by Cristian Felipe Patiño Rojas on 5/5/25.
 import Foundation
 
+struct Router {
+    let request: Request
+    let collections: [String: JSON]
+    func handleRequest() -> Response {
+        switch request.route() {
+        case .collection where request.method() == .GET: break
+        case .resource(_) where request.method() == .GET: break
+        case .collection where request.method() == .POST: break
+        case .resource(_) where request.method() == .PUT: break
+        case .resource(_) where request.method() == .DELETE: break
+        case .resource(_) where request.method() == .PATCH: break
+        case .nestedSubroute: break
+        default: break
+        }
+        fatalError("")
+    }
+}
+
 struct HeadersValidator {
     
     enum ValidationError: Int, Swift.Error {
@@ -63,7 +81,7 @@ public struct Parser {
     
     public func parse(_ request: Request) -> Response {
         let validator = HeadersValidator(request: request, collections: resources)
-      
+        let router = Router(request: request, collections: resources)
         switch validator.result {
         case .success where request.collectionName() != nil:
             let collectionName = request.collectionName()!
