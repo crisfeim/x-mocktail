@@ -33,6 +33,7 @@ struct Parser {
         switch request.method() {
         case "GET"   : return handleGET(request, on: collectionName)
         case "DELETE": return handleDELETE(request, on: collectionName)
+        case "POST"  : return handlePOST(request, on: collectionName)
         default: return Response(statusCode: 405)
         }
     }
@@ -69,6 +70,10 @@ struct Parser {
             return Response(statusCode: 404)
         }
         return Response(statusCode: 204)
+    }
+    
+    private func handlePOST(_ request: Request, on collection: String) -> Response {
+        return Response(statusCode: 415)
     }
     
     private func rawBody(for collectionName: String) -> String? {
@@ -276,7 +281,7 @@ final class Tests: XCTestCase {
     
     func test_parser_delivers405OnUnsupportedMethod() {
         let sut = makeSUT()
-        let request = Request(headers: "POST /recipes HTTP/1.1\nHost: localhost")
+        let request = Request(headers: "Unsupported /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 405)
     }
@@ -359,6 +364,15 @@ final class Tests: XCTestCase {
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 204)
+        
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers415OnMissingContentType() {
+        let sut = makeSUT()
+        let request = Request(headers: "POST /recipes HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 415)
         
         expectNoDifference(response, expectedResponse)
     }
