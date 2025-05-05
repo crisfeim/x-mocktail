@@ -251,9 +251,13 @@ final class Tests: XCTestCase {
     
     func test_parser_delivers404OnMalformedId() {
         let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "GET /recipes/abc HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 404)
+        let request1 = Request(headers: "GET /recipes/abc HTTP/1.1\nHost: localhost")
+        let response1 = sut.parse(request1)
+        expectNoDifference(response1.statusCode, 404)
+        
+        let request2 = Request(headers: "DELETE /recipes/abc HTTP/1.1\nHost: localhost")
+        let response2 = sut.parse(request2)
+        expectNoDifference(response2.statusCode, 404)
     }
     
     func test_parser_delivers404OnNonExistentResource() {
