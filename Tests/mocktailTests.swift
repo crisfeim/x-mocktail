@@ -1,6 +1,7 @@
 //  Created by Cristian Felipe Patiño Rojas on 2/5/25.
 
 import XCTest
+import CustomDump
 
 struct Parser {
     let resources: [String: [Int]]
@@ -154,84 +155,84 @@ final class Tests: XCTestCase {
         let sut = makeSUT()
         let request = Request(headers: "")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 400)
+        expectNoDifference(response.statusCode, 400)
     }
     
     func test_parser_delivers400OnMalformedHeaders() {
         let sut = makeSUT()
         let request = Request(headers: "GETHTTP/1.1")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 400)
+        expectNoDifference(response.statusCode, 400)
     }
     
     func test_parser_delivers400OnMissingHostHeader() {
         let sut = makeSUT()
         let request = Request(headers: "GET /recipes HTTP/1.1")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 400)
+        expectNoDifference(response.statusCode, 400)
     }
     
     func test_parser_delivers404OnNonExistentCollection() {
         let sut = makeSUT()
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 404)
+        expectNoDifference(response.statusCode, 404)
     }
     
     func test_parser_delivers400OnMalformedId() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes/abc HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 400)
+        expectNoDifference(response.statusCode, 400)
     }
     
     func test_parser_delivers404OnNonExistentResource() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes/2 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 404)
+        expectNoDifference(response.statusCode, 404)
     }
     
     func test_parser_delivers404OnUnknownSubroute() {
         let sut = makeSUT(resources: ["recipes": [1]])
         let request = Request(headers: "GET /recipes/1/helloworld HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 404)
+        expectNoDifference(response.statusCode, 404)
     }
     
     func test_parser_delivers405OnUnsupportedMethod() {
         let sut = makeSUT()
         let request = Request(headers: "POST /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 405)
+        expectNoDifference(response.statusCode, 405)
     }
     
     func test_parser_delivers200OnExistingCollection() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 200)
+        expectNoDifference(response.statusCode, 200)
     }
     
     func test_parser_delivers200OnExistingResource() {
         let sut = makeSUT(resources: ["recipes": [1]])
         let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 200)
+        expectNoDifference(response.statusCode, 200)
     }
     
     func test_parser_delivers200OnExistingCollectionWithaTrailingSlash() {
         let sut = makeSUT(resources: ["recipes": [1, 2]])
         let request = Request(headers: "GET /recipes/ HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 200)
+        expectNoDifference(response.statusCode, 200)
     }
     
     func test_parser_delivers400OnMalformedURL() {
         let sut = makeSUT(resources: ["recipes": [1, 2]])
         let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        XCTAssertEqual(response.statusCode, 400)
+        expectNoDifference(response.statusCode, 400)
     }
     
     func test_parser_deliversEmptyJSONArrayOnEmptyCollection() {
@@ -244,7 +245,7 @@ final class Tests: XCTestCase {
             contentLength: 2
         )
         
-        XCTAssertEqual(response, expectedResponse)
+        expectNoDifference(response, expectedResponse)
     }
 }
 
