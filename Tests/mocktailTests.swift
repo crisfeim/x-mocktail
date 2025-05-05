@@ -139,6 +139,24 @@ extension Tests {
             expectNoDifference(response, expectedResponse)
         }
     }
+    
+    func test_parse_delivers400OnPayloadAndIdRequiredVerbsWithJSONBodyWithDifferentItemId() {
+        let item1: JSONItem = ["id": "1", "title": "KFC Chicken"]
+        let item2: JSONItem = ["id": "2", "title": "Sushi rolls"]
+        let sut = makeSUT(resources: ["recipes": [item1, item2]])
+        
+        ["PATCH", "POST"].forEach { verb in
+            let request = Request(
+                headers: "\(verb) /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
+                body: #"{"id":"2","title":"Fried chicken"}"#
+            )
+            
+            let response = sut.parse(request)
+            let expectedResponse = Response(statusCode: 400)
+            
+            expectNoDifference(response, expectedResponse)
+        }
+    }
 }
 
 // MARK: - GET
@@ -297,21 +315,6 @@ extension Tests {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers400OnPUTWithJSONBodyWithDifferentItemId() {
-        let item1: JSONItem = ["id": "1", "title": "KFC Chicken"]
-        let item2: JSONItem = ["id": "2", "title": "Sushi rolls"]
-        let sut = makeSUT(resources: ["recipes": [item1, item2]])
-        let request = Request(
-            headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-            body: #"{"id":"2","title":"Fried chicken"}"#
-        )
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
     func test_parse_delivers200OnPUTWithValidJSONBodyAndMatchingURLId() {
         let item = ["id": 1]
         let sut = makeSUT(resources: ["recipes": [item]])
@@ -364,21 +367,6 @@ extension Tests {
         expectNoDifference(response, expectedResponse)
     }
     
-#warning("This test can be unified with PUT test")
-    func test_parse_delivers400OnPATCHWithJSONBodyWithDifferentItemId() {
-        let item1: JSONItem = ["id": "1", "title": "KFC Chicken"]
-        let item2: JSONItem = ["id": "2", "title": "Sushi rolls"]
-        let sut = makeSUT(resources: ["recipes": [item1, item2]])
-        let request = Request(
-            headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-            body: #"{"id":"2","title":"Fried chicken"}"#
-        )
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        
-        expectNoDifference(response, expectedResponse)
-    }
     
     func test_parse_delivers200OnPATCHWithValidJSONBodyAndMatchingURLId() {
         let item = ["id": "1"]
