@@ -109,7 +109,7 @@ extension Parser {
         }
         
         guard let itemIdString = request.id(), let id = Int(itemIdString), let _ = getItem(withId: id, on: collection) else {
-            return Response(statusCode: 404)
+            return Response(statusCode: 200, rawBody: request.body)
         }
         
         if let body = request.body, isValidJSON(body), body.removingSpaces().removingBreaklines() != "{}" {
