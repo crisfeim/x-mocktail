@@ -44,7 +44,6 @@ extension Tests {
         expectNoDifference(response.statusCode, 404)
     }
     
-    #warning("should be 400")
     func test_parser_delivers404OnDELETEMalformedId() {
         let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "DELETE /recipes/abc HTTP/1.1\nHost: localhost")
