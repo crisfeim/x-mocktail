@@ -2,8 +2,14 @@
 
 import Foundation
 
+
 func *<T>(lhs: T, rhs: (inout T) -> Void) -> T {
     var copy = lhs
     rhs(&copy)
     return copy
+}
+
+func *<A, B>(lhs: A, rhs: (A) -> B) -> B {
+    var copy = lhs
+    return rhs(copy)
 }

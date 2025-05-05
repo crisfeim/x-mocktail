@@ -6,33 +6,30 @@ import Foundation
 struct Router {
     let request: Request
     let collections: [String: JSON]
-    func handleRequest() -> Response? {
+    func handleRequest() -> Response {
         switch request.method() {
         case .GET: return handleGET()
         case .DELETE: return handleDELETE()
         case .PUT: return handlePUT()
         case .POST: return handlePOST()
-        default: return nil
+        case .PATCH: return handlePATCH()
+        default: return Response(statusCode: 405)
         }
     }
     
-    private func handleGET() -> Response? {
+    private func handleGET() -> Response {
         switch request.route() {
         case let .collection(name) where !collectionExists(name):
             return Response(statusCode: 404)
-        case let .collection(name) where collectionIsEmpty(name):
+        case let .collection(name):
+            let collection = collections[name].flatMap(JSONUtils.jsonToString)
             return Response(
                 statusCode: 200,
-                rawBody: "[]",
-                contentLength: "[]".contentLenght()
+                rawBody: collection,
+                contentLength: collection?.contentLenght()
             )
-        case let .collection(name) where !collectionIsEmpty(name):
-            let body = collections[name].flatMap(JSONUtils.jsonToString)
-            return Response(
-                statusCode: 200,
-                rawBody: body,
-                contentLength: body?.contentLenght()
-            )
+        case let .resource(item) where !itemExists(item):
+            return Response(statusCode: 404)
         case let .resource(item) where itemExists(item):
             let body = (collections[item.collectionName] as? JSONArray)?.getItem(with: item.id).flatMap(JSONUtils.jsonItemToString)
             return Response(
@@ -40,11 +37,11 @@ struct Router {
                 rawBody: body,
                 contentLength: body?.contentLenght()
             )
-        default: return nil
+        default: return Response(statusCode: 400)
         }
     }
     
-    private func handleDELETE() -> Response? {
+    private func handleDELETE() -> Response {
         switch request.route() {
         case .collection, .nestedSubroute:
             return Response(statusCode: 400)
@@ -95,6 +92,55 @@ struct Router {
             )
         default: return Response(statusCode: 400)
         }
+    }
+    
+    private func handlePATCH() -> Response {
+        switch request.route() {
+        case .collection     where !JSONUtils.isValidNonEmptyJSON(request.body),
+             .resource       where !JSONUtils.isValidNonEmptyJSON(request.body),
+             .nestedSubroute where !JSONUtils.isValidNonEmptyJSON(request.body),
+             .resource       where hasID(request.body):
+            return Response(statusCode: 400)
+        case .resource(let item) where !itemExists(item):
+            return Response(statusCode: 404)
+        case .resource(let item):
+            let patch = JSONUtils.jsonItem(from: request.body!)!
+            let item = getItem(withId: item.id, on: item.collectionName)!
+            let patched = item
+            * { item in
+                for (key, value) in patch {
+                    item[key] = value
+                }
+            }
+            * JSONUtils.jsonToString
+            
+            return Response(
+                statusCode: 200,
+                rawBody: patched,
+                contentLength: patched?.contentLenght()
+            )
+        default:
+            return Response(statusCode: 400)
+        }
+    }
+    
+    func hasID(_ body: String?) -> Bool {
+        body == nil ? false : JSONUtils.jsonItem(from: body!)?.keys.contains("id") ?? false
+    }
+    
+    func requestedResource(_ request: Request) -> JSONItem? {
+        guard
+            let id = request.route().id,
+            let collectionName = request.collectionName(),
+            let existingItem = getItem(withId: id, on: collectionName)
+        else { return nil }
+        return existingItem
+    }
+    
+    private func getItem(withId id: String, on collection: String) -> JSONItem? {
+        let items = collections[collection] as? JSONArray
+        let item = items?.getItem(with: id)
+        return item
     }
 
     private func collectionExists(_ collectionName: String) -> Bool {

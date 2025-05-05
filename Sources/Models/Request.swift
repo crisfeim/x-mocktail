@@ -1,6 +1,7 @@
 // Created by Cristian Felipe Patiño Rojas on 5/5/25.
 
 
+#warning("Make body non optional")
 public struct Request {
     public let headers: String
     public let body: String?

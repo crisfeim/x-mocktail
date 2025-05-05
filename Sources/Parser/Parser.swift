@@ -21,25 +21,14 @@ public struct Parser {
         
         switch validator.result {
         case .success where request.collectionName() != nil:
-            guard let response = router.handleRequest() else {
-                let collectionName = request.collectionName()!
-                switch request.method() {
-                case .PATCH where requestedResource(request) != nil:
-                    return handlePATCH(
-                        request,
-                        on: collectionName,
-                        for: requestedResource(request)!
-                    )
-                default: return Response(statusCode: 404)
-                }
-            }
-            return response
+            return router.handleRequest()
         case .failure(let error):
             return Response(statusCode: error.rawValue)
         default: return Response(statusCode: 404)
         }
     }
-    
+   
+    #warning("delete")
     func requestedResource(_ request: Request) -> JSONItem? {
         guard
             let id = request.route().id,
@@ -137,6 +126,7 @@ extension Parser {
         return String(data: data, encoding: .utf8)
     }
     
+    #warning("delete")
     private func getItem(withId id: String, on collection: String) -> JSONItem? {
         let items = resources[collection] as? JSONArray
         let item = items?.getItem(with: id)

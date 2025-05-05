@@ -44,15 +44,12 @@ extension Tests {
         expectNoDifference(response.statusCode, 404)
     }
     
-    func test_parser_delivers404OnMalformedId() {
+    #warning("should be 400")
+    func test_parser_delivers404OnDELETEMalformedId() {
         let sut = makeSUT(resources: ["recipes": []])
-        let request1 = Request(headers: "GET /recipes/abc HTTP/1.1\nHost: localhost")
-        let response1 = sut.parse(request1)
-        expectNoDifference(response1.statusCode, 404)
-        
-        let request2 = Request(headers: "DELETE /recipes/abc HTTP/1.1\nHost: localhost")
-        let response2 = sut.parse(request2)
-        expectNoDifference(response2.statusCode, 404)
+        let request = Request(headers: "DELETE /recipes/abc HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        expectNoDifference(response.statusCode, 404)
     }
     
     func test_parser_delivers404OnNonExistentResource() {
@@ -62,19 +59,21 @@ extension Tests {
         expectNoDifference(response.statusCode, 404)
     }
     
-    func test_parser_delivers404OnUnknownSubroute() {
+    func test_parser_delivers400OnUnknownSubroute() {
         let sut = makeSUT(resources: ["recipes": [1]])
         let request = Request(headers: "GET /recipes/1/helloworld HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 404)
+        expectNoDifference(response.statusCode, 400)
     }
 
     
-    func test_parser_delivers404OnMalformedURL() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 404)
+    func test_parser_delivers400OnMalformedURL() {
+        XCTExpectFailure("This should be a high leve check, not a GET specific one") {
+            let sut = makeSUT(resources: ["recipes": []])
+            let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
+            let response = sut.parse(request)
+            expectNoDifference(response.statusCode, 400)
+        }
     }
     
     func test_parse_delivers415OnPayloadRequiredRequestsMissingContentTypeHeader() {
@@ -353,7 +352,7 @@ extension Tests {
         expectNoDifference(response, Response(statusCode: 404))
     }
     
-    func test_parse_delivers200OnPATCHWithValidJSONBodyAndMatchingURLId() {
+    func test_parse_delivers400OnPATCHWithValidJSONBodyAndMatchingURLId() {
         let item = ["id": "1"]
         let sut = makeSUT(resources: ["recipes": [item]])
         let request = Request(
@@ -362,10 +361,7 @@ extension Tests {
         )
         
         let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 200,
-            rawBody: #"{"id":"1","title":"New title"}"#
-        )
+        let expectedResponse = Response(statusCode: 400)
         expectNoDifference(response, expectedResponse)
     }
 

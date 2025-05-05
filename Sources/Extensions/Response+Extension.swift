@@ -28,5 +28,6 @@ public extension Response {
         df.dateFormat = "EEE',' dd MMM yyyy HH:mm:ss zzz"
         df.locale = Locale(identifier: "en_US_POSIX")
         df.timeZone = TimeZone(secondsFromGMT: 0)
+        return df
     }
 }
