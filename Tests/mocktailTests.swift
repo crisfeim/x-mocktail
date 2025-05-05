@@ -77,7 +77,7 @@ struct Parser {
     }
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
-        guard let contentType = request.contentType, contentType == "application/json" else {
+        guard let contentType = request.contentType(), contentType == "application/json" else {
             return Response(statusCode: 415)
         }
         
@@ -224,7 +224,7 @@ private extension Request {
         RequestType(urlComponents())
     }
     
-    var contentType: String? {
+    func contentType() -> String? {
         for line in requestHeaders() {
             if line.lowercased().starts(with: "content-type:") {
                 return line
