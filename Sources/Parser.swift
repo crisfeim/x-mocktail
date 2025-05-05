@@ -52,14 +52,6 @@ public struct Parser {
     }
 }
 
-
-// MARK: - GET
-extension Parser {
-    
-
-    
-}
-
 // MARK: - POST
 extension Parser {
     
