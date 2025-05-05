@@ -81,17 +81,17 @@ struct Parser {
             return Response(statusCode: 415)
         }
         
-        if let item = request.body {
-            guard !item.isEmpty, item.removingSpaces().removingBreaklines() != "{}" else { return Response(statusCode: 400) }
-            var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: item.data(using: .utf8)!, options: []) as? JSONItem
+        if let body = request.body {
+            guard !body.isEmpty, body.removingSpaces().removingBreaklines() != "{}" else { return Response(statusCode: 400) }
+            var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: body.data(using: .utf8)!, options: []) as? JSONItem
             let hasID = jsonItem?.keys.contains("id") ?? false
-            let statusCode = hasID ? 400 : isValidJSON(item) ? 201 : 400
+            let statusCode = hasID ? 400 : isValidJSON(body) ? 201 : 400
             let existentItems = resources[collection] as? JSONArray ?? []
             let newId = existentItems.isEmpty ? 1 : existentItems.count
             jsonItem?["id"] = newId
             return Response(
                 statusCode: statusCode,
-                rawBody: isValidJSON(item) && !hasID ? jsonString(of: jsonItem!) : nil
+                rawBody: isValidJSON(body) && !hasID ? jsonString(of: jsonItem!) : nil
             )
         }
         return Response(statusCode: 415)
@@ -104,6 +104,11 @@ struct Parser {
         
         guard let itemIdString = request.id(), let id = Int(itemIdString), let _ = getItem(withId: id, on: collection) else {
             return Response(statusCode: 404)
+        }
+        
+        if let body = request.body, isValidJSON(body), body.removingSpaces().removingBreaklines() != "{}" {
+            
+            return Response(statusCode: 200, rawBody: body)
         }
         return Response(statusCode: 400)
     }
@@ -599,6 +604,22 @@ final class Tests: XCTestCase {
         
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 404)
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers200OnPUTWithValidJSONBody() {
+        let item = ["id": 1]
+        let sut = makeSUT(resources: ["recipes": [item]])
+        let request = Request(
+            headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
+            body: #"{"title":"New title"}"#
+        )
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(
+            statusCode: 200,
+            rawBody: #"{"title":"New title"}"#
+        )
         expectNoDifference(response, expectedResponse)
     }
 }
