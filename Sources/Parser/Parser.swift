@@ -2,21 +2,21 @@
 import Foundation
 
 public struct Parser {
-    private let resources: [String: JSON]
+    private let collections: [String: JSON]
     
-    public init(resources: [String : JSON]) {
-        self.resources = resources
+    public init(collections: [String : JSON]) {
+        self.collections = collections
     }
     
     public func parse(_ request: Request) -> Response {
         let validator = HeadersValidator(
             request: request,
-            collections: resources
+            collections: collections
         )
         
         let router = Router(
             request: request,
-            collections: resources
+            collections: collections
         )
         
         switch validator.result {
@@ -47,7 +47,7 @@ extension Parser {
             var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: body.data(using: .utf8)!, options: []) as? JSONItem
             let hasID = jsonItem?.keys.contains("id") ?? false
             let statusCode = hasID ? 400 : 201
-            let existentItems = resources[collection] as? JSONArray ?? []
+            let existentItems = collections[collection] as? JSONArray ?? []
             let newId = existentItems.isEmpty ? 1 : existentItems.count
             jsonItem?["id"] = newId
             return Response(
@@ -121,14 +121,14 @@ extension Parser {
 extension Parser {
     
     private func rawBody(for collectionName: String) -> String? {
-        guard let items = resources[collectionName] else { return nil }
+        guard let items = collections[collectionName] else { return nil }
         guard let data = try? JSONSerialization.data(withJSONObject: items) else { return nil }
         return String(data: data, encoding: .utf8)
     }
     
     #warning("delete")
     private func getItem(withId id: String, on collection: String) -> JSONItem? {
-        let items = resources[collection] as? JSONArray
+        let items = collections[collection] as? JSONArray
         let item = items?.getItem(with: id)
         return item
     }

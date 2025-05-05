@@ -46,21 +46,21 @@ extension Tests {
     
     #warning("should be 400")
     func test_parser_delivers404OnDELETEMalformedId() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "DELETE /recipes/abc HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 404)
     }
     
     func test_parser_delivers404OnNonExistentResource() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "GET /recipes/2 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 404)
     }
     
     func test_parser_delivers400OnUnknownSubroute() {
-        let sut = makeSUT(resources: ["recipes": [1]])
+        let sut = makeSUT(collections: ["recipes": [1]])
         let request = Request(headers: "GET /recipes/1/helloworld HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 400)
@@ -69,7 +69,7 @@ extension Tests {
     
     func test_parser_delivers400OnMalformedURL() {
         XCTExpectFailure("This should be a high leve check, not a GET specific one") {
-            let sut = makeSUT(resources: ["recipes": []])
+            let sut = makeSUT(collections: ["recipes": []])
             let request = Request(headers: "GET //recipes/ HTTP/1.1\nHost: localhost")
             let response = sut.parse(request)
             expectNoDifference(response.statusCode, 400)
@@ -77,7 +77,7 @@ extension Tests {
     }
     
     func test_parse_delivers415OnPayloadRequiredRequestsMissingContentTypeHeader() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         
         ["POST", "PATCH", "PUT"].forEach { verb in
             let request = Request(headers: "\(verb) /recipes HTTP/1.1\nHost: localhost")
@@ -90,7 +90,7 @@ extension Tests {
     }
     
     func test_parse_delivers415OnPayloadRequiredRequestsUnsupportedMediaType() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         
         ["POST", "PATCH", "PUT"].forEach { verb in
             let request = Request(headers: "\(verb) /recipes\nContent-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
@@ -102,7 +102,7 @@ extension Tests {
     }
  
     func test_parse_delivers400OnPayloadAndIDRequiredRequestsWithInvalidJSONBody() {
-        let sut = makeSUT(resources: ["recipes": [["id": "1"]]])
+        let sut = makeSUT(collections: ["recipes": [["id": "1"]]])
         
         ["PATCH", "PUT"].forEach { verb in
             let request = Request(
@@ -131,7 +131,7 @@ extension Tests {
     func test_parse_delivers400OnPayloadAndIDRequiredRequestsWithJSONBodyWithDifferentItemId() {
         let item1: JSONItem = ["id": "1", "title": "KFC Chicken"]
         let item2: JSONItem = ["id": "2", "title": "Sushi rolls"]
-        let sut = makeSUT(resources: ["recipes": [item1, item2]])
+        let sut = makeSUT(collections: ["recipes": [item1, item2]])
         
         ["PATCH", "POST"].forEach { verb in
             let request = Request(
@@ -147,7 +147,7 @@ extension Tests {
     }
     
     func test_parse_delivers400OnIdRequiredRequestWithNoIdOnRequestURL() {
-        let sut = makeSUT(resources: ["recipes": [:]])
+        let sut = makeSUT(collections: ["recipes": [:]])
         ["DELETE", "PATCH", "PUT"].forEach { verb in
             let request = Request(headers: "\(verb) /recipes HTTP/1.1\nHost: localhost\nContent-Type: application/json", body: "any payload")
             let response = sut.parse(request)
@@ -160,7 +160,7 @@ extension Tests {
 extension Tests {
     
     func test_parser_delivers200GOnGETExistingCollection() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 200)
@@ -168,14 +168,14 @@ extension Tests {
     
     
     func test_parser_delivers200OnGETExistingCollectionWithaTrailingSlash() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "GET /recipes/ HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 200)
     }
     
     func test_parser_deliversEmptyJSONArrayOnGETEmptyCollection() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(
@@ -190,7 +190,7 @@ extension Tests {
     func test_parser_deliversExpectedArrayOnNonGETEmptyCollection() {
         let item1 = ["id": 1]
         let item2 = ["id": 2]
-        let sut = makeSUT(resources: ["recipes": [item1, item2]])
+        let sut = makeSUT(collections: ["recipes": [item1, item2]])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(
@@ -204,7 +204,7 @@ extension Tests {
     
     func test_parser_deliversExpectedItemOnGETExistentItem() {
         let item = ["id": "1"]
-        let sut = makeSUT(resources: ["recipes": [item]])
+        let sut = makeSUT(collections: ["recipes": [item]])
         let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(
@@ -231,7 +231,7 @@ extension Tests {
     
     func test_parse_delivers204OnSuccessfulItemDeletion() {
         let item = ["id": "1"]
-        let sut = makeSUT(resources: ["recipes": [item]])
+        let sut = makeSUT(collections: ["recipes": [item]])
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 204)
@@ -244,7 +244,7 @@ extension Tests {
 extension Tests {
     
     func test_parse_delivers400OnPOSTWithInvalidJSONBody() {
-        let sut = makeSUT(resources: ["recipes": [["id": 1]]])
+        let sut = makeSUT(collections: ["recipes": [["id": 1]]])
      
         let request = Request(
             headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
@@ -257,7 +257,7 @@ extension Tests {
     }
     
     func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         let request = Request(
             headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
             body: #"{"id": 1,"title":"Fried chicken"}"#
@@ -270,7 +270,7 @@ extension Tests {
     }
     
     func test_parse_delivers201OnPOSTWithValidJSONBody() throws {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         let request = Request(
             headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
             body: #"{"title":"Fried chicken"}"#
@@ -299,7 +299,7 @@ extension Tests {
 extension Tests {
 
     func test_parse_delivers200OnPUTNonExistingResource() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json")
         
         let response = sut.parse(request)
@@ -309,7 +309,7 @@ extension Tests {
     
     func test_parse_delivers200OnPUTWithValidJSONBodyAndMatchingURLId() {
         let item = ["id": "1"]
-        let sut = makeSUT(resources: ["recipes": [item]])
+        let sut = makeSUT(collections: ["recipes": [item]])
         let request = Request(
             headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
             body: #"{"id":1,"title":"New title"}"#
@@ -326,7 +326,7 @@ extension Tests {
     
     func test_parse_delivers200OnPUTWithValidJSONBody() {
         let item = ["id": "1"]
-        let sut = makeSUT(resources: ["recipes": [item]])
+        let sut = makeSUT(collections: ["recipes": [item]])
         let request = Request(
             headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
             body: #"{"title":"New title"}"#
@@ -346,7 +346,7 @@ extension Tests {
 extension Tests {
     
     func test_parse_delivers404OnPATCHNonExistentResource() {
-        let sut = makeSUT(resources: ["recipes": []])
+        let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json")
         let response = sut.parse(request)
         expectNoDifference(response, Response(statusCode: 404))
@@ -354,7 +354,7 @@ extension Tests {
     
     func test_parse_delivers400OnPATCHWithValidJSONBodyAndMatchingURLId() {
         let item = ["id": "1"]
-        let sut = makeSUT(resources: ["recipes": [item]])
+        let sut = makeSUT(collections: ["recipes": [item]])
         let request = Request(
             headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
             body: #"{"id":"1","title":"New title"}"#
@@ -368,7 +368,7 @@ extension Tests {
 
     func test_parse_delivers200OnPATCHWithValidJSONBody() throws {
         let original: JSONItem = ["id": "1", "title": "Old title"]
-        let sut = makeSUT(resources: ["recipes": [original]])
+        let sut = makeSUT(collections: ["recipes": [original]])
         let request = Request(
             headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json",
             body: #"{"title":"New title"}"#
@@ -390,8 +390,8 @@ extension Tests {
 
 // MARK: - Helpers
 private extension Tests {
-    func makeSUT(resources: [String: JSON] = [:]) -> Parser {
-        Parser(resources: resources)
+    func makeSUT(collections: [String: JSON] = [:]) -> Parser {
+        Parser(collections: collections)
     }
     
     func anyNonJSONMediaType() -> String {
@@ -416,7 +416,7 @@ private extension Tests {
         line: UInt = #line
     ) {
         let item = ["id": "1"]
-        let sut = makeSUT(resources: ["recipes": [item]])
+        let sut = makeSUT(collections: ["recipes": [item]])
         
         let request = Request(
             headers: "\(verb) /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
