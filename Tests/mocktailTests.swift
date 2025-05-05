@@ -132,7 +132,7 @@ extension Tests {
     func test_parse_delivers404OnPayloadRequiredVerbsNonExistingCollection() {
         let sut = makeSUT()
         ["POST", "PATCH", "PUT"].forEach { verb in
-            let request = Request(headers: "\(verb) /nonExistingCollection HTTP/1.1\nHost: localhost")
+            let request = Request(headers: "\(verb) /nonExistingCollection HTTP/1.1\nHost: localhost", body: "any body")
             
             let response = sut.parse(request)
             let expectedResponse = Response(statusCode: 404)
@@ -306,15 +306,6 @@ extension Tests {
         expectNoDifference(response, expectedResponse)
     }
     
-    func test_parse_delivers404OnPUTNonExistingCollection() {
-        let sut = makeSUT()
-        let request = Request(headers: "PUT /nonExistingCollection HTTP/1.1\nHost: localhost\nContent-type: application/json")
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 404)
-        expectNoDifference(response, expectedResponse)
-    }
-    
     func test_parse_delivers200OnPUTWithValidJSONBodyAndMatchingURLId() {
         let item = ["id": 1]
         let sut = makeSUT(resources: ["recipes": [item]])
@@ -357,16 +348,6 @@ extension Tests {
         let response = sut.parse(request)
         expectNoDifference(response, Response(statusCode: 404))
     }
-    
-    func test_parse_delivers404OnPATCHNonExistingCollection() {
-        let sut = makeSUT()
-        let request = Request(headers: "PATCH /nonExistingCollection HTTP/1.1\nHost: localhost\nContent-type: application/json")
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 404)
-        expectNoDifference(response, expectedResponse)
-    }
-    
     
     func test_parse_delivers200OnPATCHWithValidJSONBodyAndMatchingURLId() {
         let item = ["id": "1"]
