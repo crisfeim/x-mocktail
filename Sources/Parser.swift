@@ -1,6 +1,55 @@
 // Created by Cristian Felipe Patiño Rojas on 5/5/25.
 import Foundation
 
+enum HeadersValidator {
+    
+    enum ValidationError: Int, Swift.Error {
+        case notFound = 404
+        case badRequest = 400
+        case unsupportedMethod = 405
+        case missingOrWrongMediaType = 415
+    }
+    
+    fileprivate typealias ValidationResult = Result<(method: Request.HTTPVerb, collectionName: String), ValidationError>
+    
+    fileprivate static func validateHeaders(of request: Request, on collections: [String: JSON]) -> ValidationResult {
+        guard request.headers.contains("Host"), let collectionName = request.collectionName()  else {
+            return .failure(.badRequest)
+        }
+        
+        guard let method = request.method() else {
+            return .failure(.unsupportedMethod)
+        }
+        
+        guard collections.keys.contains(collectionName) else {
+            return .failure(.notFound)
+        }
+        
+        if request.payloadRequiredRequest() {
+            guard let contentType = request.contentType(), contentType == "application/json" else {
+                return .failure(.missingOrWrongMediaType)
+            }
+        }
+        
+        if [Request.HTTPVerb.DELETE, .PATCH].contains(request.method()) {
+            
+         guard let id = request.type().id,
+               let _ = getItem(withId: id, on: collectionName, collections: collections) else {
+             return .failure(.notFound)
+         }
+        }
+        
+        
+        return .success((method, collectionName))
+    }
+    
+    private static func getItem(withId id: String, on collectionName: String, collections: [String: JSON]) -> JSONItem? {
+        let items = collections[collectionName] as? JSONArray
+        let item = items?.getItem(with: id)
+        return item
+    }
+}
+
 public struct Parser {
     private let resources: [String: JSON]
     
@@ -9,25 +58,33 @@ public struct Parser {
     }
     
     public func parse(_ request: Request) -> Response {
-        guard request.headers.contains("Host"), let collectionName = request.collectionName()  else {
-            return Response(statusCode: 400)
-        }
         
-        guard let method = request.method() else {
-            return Response(statusCode: 405)
+        switch HeadersValidator.validateHeaders(of: request, on: resources) {
+        case let .success(tuple):
+            switch tuple.method {
+            case .GET   : return handleGET(request, on: tuple.collectionName)
+            case .DELETE: return Response(statusCode: 204)
+            case .POST  : return handlePOST(request, on: tuple.collectionName)
+            case .PUT   : return handlePUT(request, on: tuple.collectionName)
+            case .PATCH where requestedResource(request) != nil:
+                return handlePATCH(
+                    request,
+                    on: tuple.collectionName,
+                    for: requestedResource(request)!
+                )
+            default: return Response(statusCode: 404)
+            }
+        case .failure(let error): return Response(statusCode: error.rawValue)
         }
-        
-        guard resources.keys.contains(collectionName) else {
-            return Response(statusCode: 404)
-        }
-        
-        switch method {
-        case .GET   : return handleGET(request, on: collectionName)
-        case .DELETE: return handleDELETE(request, on: collectionName)
-        case .POST  : return handlePOST(request, on: collectionName)
-        case .PUT   : return handlePUT(request, on: collectionName)
-        case .PATCH : return handlePATCH(request, on: collectionName)
-        }
+    }
+    
+    func requestedResource(_ request: Request) -> JSONItem? {
+        guard
+            let id = request.type().id,
+            let collectionName = request.collectionName(),
+            let existingItem = getItem(withId: id, on: collectionName)
+        else { return nil }
+        return existingItem
     }
 }
 
@@ -59,29 +116,11 @@ extension Parser {
     }
     
 }
- 
-
-// MARK: - DELETE
-extension Parser {
-    private func handleDELETE(_ request: Request, on collection: String) -> Response {
-        guard
-            let id = request.type().id,
-            let _ = getItem(withId: id, on: collection)
-        else {
-            return Response(statusCode: 404)
-        }
-        return Response(statusCode: 204)
-    }
-}
 
 // MARK: - POST
 extension Parser {
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
-        guard let contentType = request.contentType(), contentType == "application/json" else {
-            return Response(statusCode: 415)
-        }
-        
         if let body = request.body, isValidNonEmptyJSON(body) {
             var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: body.data(using: .utf8)!, options: []) as? JSONItem
             let hasID = jsonItem?.keys.contains("id") ?? false
@@ -103,72 +142,51 @@ extension Parser {
 extension Parser {
 
     private func handlePUT(_ request: Request, on collection: String) -> Response {
-        guard let contentType = request.contentType(), contentType == "application/json" else {
-            return Response(statusCode: 415)
-        }
-        
         guard let id = request.id(), let _ = getItem(withId: id, on: collection) else {
             return Response(statusCode: 200, rawBody: request.body)
         }
         
-        if let body = request.body, isValidNonEmptyJSON(body) {
-            if let bodyId = jsonItem(from: body)?["id"] as? String {
-                if bodyId == id {
-                    return Response(statusCode: 200, rawBody: body)
-                }
-                else {
-                    return Response(statusCode: 400)
-                }
-            }
-    
-            return Response(
-                statusCode: 200,
-                rawBody: body
-            )
+        guard
+            let body = request.body,
+            isValidNonEmptyJSON(body),
+            let bodyId = jsonItem(from: body)?["id"] as? String,
+            bodyId == id
+        else {
+            return Response(statusCode: 400)
         }
-        return Response(statusCode: 400)
+        
+       return Response(statusCode: 200, rawBody: body)
     }
 }
 
 // MARK: - Patch
 extension Parser {
 
-    
-    func handlePATCH(_ request: Request, on collection: String) -> Response {
-        guard let contentType = request.contentType(), contentType == "application/json" else {
-            return Response(statusCode: 415)
-        }
-
-        guard let id = request.type().id else {
-            return Response(statusCode: 404)
-        }
-
-        guard var existingItem = getItem(withId: id, on: collection) else {
-            return Response(statusCode: 404)
-        }
-
+    func handlePATCH(_ request: Request, on collection: String, for existingItem: JSONItem) -> Response {
         guard
-            let patchBody = request.body,
-            isValidNonEmptyJSON(patchBody),
-            let patchItem = jsonItem(from: patchBody)
+            let body = request.body,
+            isValidNonEmptyJSON(body),
+            let patch = jsonItem(from: body)
         else {
             return Response(statusCode: 400)
         }
         
-        if let bodyId = patchItem["id"] as? String {
-            if bodyId == id {
-                return Response(statusCode: 200, rawBody: patchBody)
+        if let bodyId = patch["id"] as? String {
+            if bodyId == existingItem["id"] as? String {
+                return Response(statusCode: 200, rawBody: body)
             }
             else {
                 return Response(statusCode: 400)
             }
         }
-
-        for (key, value) in patchItem {
-            existingItem[key] = value
+        
+        let patchedItem = existingItem * { item in
+            for (key, value) in patch {
+                item[key] = value
+            }
         }
 
-        let updatedJSON = jsonString(of: existingItem)
+        let updatedJSON = jsonString(of: patchedItem)
         return Response(statusCode: 200, rawBody: updatedJSON, contentLength: updatedJSON?.contentLenght())
     }
 }
@@ -282,6 +300,10 @@ private extension Request {
             return nil
         }
         return HTTPVerb(rawValue: verb)
+    }
+    
+    func payloadRequiredRequest() -> Bool {
+        [HTTPVerb.PUT, .PATCH, .POST].contains(method())
     }
     
     func allItems() -> Bool {
