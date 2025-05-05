@@ -129,17 +129,6 @@ extension Tests {
         expect(expectedResponse, on: nil, for: "PUT")
     }
     
-    func test_parse_delivers404OnPayloadRequiredVerbsNonExistingCollection() {
-        let sut = makeSUT()
-        ["POST", "PATCH", "PUT"].forEach { verb in
-            let request = Request(headers: "\(verb) /nonExistingCollection HTTP/1.1\nHost: localhost", body: "a")
-            
-            let response = sut.parse(request)
-            let expectedResponse = Response(statusCode: 404)
-            expectNoDifference(response, expectedResponse)
-        }
-    }
-    
     func test_parse_delivers400OnPayloadAndIdRequiredVerbsWithJSONBodyWithDifferentItemId() {
         let item1: JSONItem = ["id": "1", "title": "KFC Chicken"]
         let item2: JSONItem = ["id": "2", "title": "Sushi rolls"]
@@ -160,8 +149,8 @@ extension Tests {
     
     func test_parse_delivers400OnIdRequiredRequestWithNoIdOnRequestURL() {
         let sut = makeSUT(resources: ["recipes": [:]])
-        ["DELETE", "POST", "PATCH"].forEach { verb in
-            let request = Request(headers: "\(verb) /recipes HTTP/1.1\nHost: localhost\nContent-Type: application/json")
+        ["DELETE", "POST", "PATCH", "PUT"].forEach { verb in
+            let request = Request(headers: "\(verb) /recipes HTTP/1.1\nHost: localhost\nContent-Type: application/json", body: "any payload")
             let response = sut.parse(request)
             expectNoDifference(response, Response(statusCode: 400), "Expect failed for \(verb)")
         }

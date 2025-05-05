@@ -4,18 +4,17 @@ import Foundation
 struct Router {
     let request: Request
     let collections: [String: JSON]
-    func handleRequest() -> Response {
+    func handleRequest() -> Response? {
         switch request.route() {
-        case .collection where request.method() == .GET: break
-        case .resource(_) where request.method() == .GET: break
-        case .collection where request.method() == .POST: break
-        case .resource(_) where request.method() == .PUT: break
-        case .resource(_) where request.method() == .DELETE: break
-        case .resource(_) where request.method() == .PATCH: break
-        case .nestedSubroute: break
-        default: break
+        case .collection where request.method() == .GET: return nil
+        case .resource(_) where request.method() == .GET: return nil
+        case .collection where request.method() == .POST: return nil
+        case .resource(_) where request.method() == .PUT: return nil
+        case .resource(_) where request.method() == .DELETE: return nil
+        case .resource(_) where request.method() == .PATCH: return nil
+        case .nestedSubroute: return nil
+        default: return nil
         }
-        fatalError("")
     }
 }
 
@@ -40,10 +39,6 @@ struct HeadersValidator {
         
         guard let _ = request.method() else {
             return .failure(.unsupportedMethod)
-        }
-        
-        guard collections.keys.contains(collectionName) else {
-            return .failure(.notFound)
         }
         
         if request.payloadRequiredRequest() {
@@ -80,25 +75,37 @@ public struct Parser {
     }
     
     public func parse(_ request: Request) -> Response {
-        let validator = HeadersValidator(request: request, collections: resources)
-        let router = Router(request: request, collections: resources)
+        let validator = HeadersValidator(
+            request: request,
+            collections: resources
+        )
+        
+        let router = Router(
+            request: request,
+            collections: resources
+        )
+        
         switch validator.result {
         case .success where request.collectionName() != nil:
-            let collectionName = request.collectionName()!
-            switch request.method() {
-            case .GET   : return handleGET(request, on: collectionName)
-            case .DELETE: return Response(statusCode: 204)
-            case .POST  : return handlePOST(request, on: collectionName)
-            case .PUT   : return handlePUT(request, on: collectionName)
-            case .PATCH where requestedResource(request) != nil:
-                return handlePATCH(
-                    request,
-                    on: collectionName,
-                    for: requestedResource(request)!
-                )
-            default: return Response(statusCode: 404)
+            guard let response = router.handleRequest() else {
+                let collectionName = request.collectionName()!
+                switch request.method() {
+                case .GET   : return handleGET(request, on: collectionName)
+                case .DELETE: return Response(statusCode: 204)
+                case .POST  : return handlePOST(request, on: collectionName)
+                case .PUT   : return handlePUT(request, on: collectionName)
+                case .PATCH where requestedResource(request) != nil:
+                    return handlePATCH(
+                        request,
+                        on: collectionName,
+                        for: requestedResource(request)!
+                    )
+                default: return Response(statusCode: 404)
+                }
             }
-        case .failure(let error): return Response(statusCode: error.rawValue)
+            return response
+        case .failure(let error):
+            return Response(statusCode: error.rawValue)
         default: return Response(statusCode: 404)
         }
     }
