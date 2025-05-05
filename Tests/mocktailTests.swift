@@ -81,9 +81,12 @@ struct Parser {
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
         if let item = request.body {
+            let itemAsDict: JSONItem? = try? JSONSerialization.jsonObject(with: item.data(using: .utf8)!, options: []) as? JSONItem
+            let hasID = itemAsDict?.keys.contains("id") ?? false
+            let statusCode = hasID ? 400 : isValidJSON(item) ? 201 : 400
             return Response(
-                statusCode: isValidJSON(item) ? 201 : 400,
-                rawBody: isValidJSON(item) ? item : nil
+                statusCode: statusCode,
+                rawBody: isValidJSON(item) && !hasID ? item : nil
             )
         }
         return Response(statusCode: 415)
@@ -462,6 +465,19 @@ final class Tests: XCTestCase {
         )
         let response = sut.parse(request)
         let expectedResponse = Response(statusCode: 201, rawBody: #"{"title":"Fried chicken"}"#)
+        
+        expectNoDifference(response, expectedResponse)
+    }
+    
+    func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(
+            headers: "POST /recipes HTTP/1.1\nHost: localhost",
+            body: #"{"id": 1,"title":"Fried chicken"}"#
+        )
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 400)
         
         expectNoDifference(response, expectedResponse)
     }
