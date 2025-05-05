@@ -113,10 +113,18 @@ extension Parser {
         }
         
         if let body = request.body, isValidJSON(body), body.removingSpaces().removingBreaklines() != "{}" {
-            let hasID = jsonItem(from: body)?.keys.contains("id") ?? false
+            if let bodyId = jsonItem(from: body)?["id"] as? Int {
+                if bodyId == id {
+                    return Response(statusCode: 200, rawBody: body)
+                }
+                else {
+                    return Response(statusCode: 400)
+                }
+            }
+    
             return Response(
-                statusCode: hasID ? 400 : 200,
-                rawBody: hasID ? nil : body
+                statusCode: 200,
+                rawBody: body
             )
         }
         return Response(statusCode: 400)
