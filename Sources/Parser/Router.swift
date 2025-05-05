@@ -75,6 +75,8 @@ struct Router {
     private func handlePOST() -> Response? {
         switch request.route() {
         case .resource: return Response(statusCode: 400)
+        case let .collection(name) where !collectionExists(name):
+            return Response(statusCode: 404)
         default: return nil
         }
     }
