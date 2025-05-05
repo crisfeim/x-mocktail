@@ -318,6 +318,15 @@ extension Tests {
         }
     }
     
+    func test_parse_delivers404OnPUTNonExistingResource() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(headers: "PUT /recipes/nonexistent HTTP/1.1\nHost: localhost\nContent-type: application/json")
+        
+        let response = sut.parse(request)
+        let expectedResponse = Response(statusCode: 404)
+        expectNoDifference(response, expectedResponse)
+    }
+    
     func test_parse_delivers404OnPUTNonExistingCollection() {
         let sut = makeSUT()
         let request = Request(headers: "PUT /nonExistingCollection HTTP/1.1\nHost: localhost\nContent-type: application/json")
@@ -373,16 +382,6 @@ extension Tests {
         )
         expectNoDifference(response, expectedResponse)
     }
-    
-    func test_parse_delivers404OnPUTNonExistingResource() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "PUT /recipes/nonexistent HTTP/1.1\nHost: localhost\nContent-type: application/json")
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 404)
-        expectNoDifference(response, expectedResponse)
-    }
-    
 }
 
 // MARK: - Patch
