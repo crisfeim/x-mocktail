@@ -19,8 +19,12 @@ struct Parser {
         }
         
         switch request.type() {
-        case .allResources where collectionExists(collectionName):
-            return Response(statusCode: 200, rawBody: "[]", contentLength: 2)
+        case .allResources where rawBody(for: collectionName) != nil:
+            return Response(
+                statusCode: 200,
+                rawBody: rawBody(for: collectionName)!,
+                contentLength: 2
+            )
         case .singleResource(let id):
             guard let id = Int(id) else { return Response(statusCode: 400) }
             let items = resources[collectionName] ?? []
@@ -30,8 +34,8 @@ struct Parser {
         }
     }
     
-    private func collectionExists(_ collectionName: String) -> Bool {
-        resources.keys.contains(collectionName)
+    private func rawBody(for collectionName: String) -> String? {
+        resources[collectionName]?.description.removingSpaces()
     }
 }
 
@@ -121,6 +125,10 @@ private extension Request {
 }
 
 private extension String {
+    func removingSpaces() -> String {
+        self.replacingOccurrences(of: " ", with: "")
+    }
+    
     func trimInitialAndLastSlashes() -> String {
         var copy = self
         if copy.first == "/" {
@@ -247,6 +255,20 @@ final class Tests: XCTestCase {
         
         expectNoDifference(response, expectedResponse)
     }
+    
+    func test_parser_deliversExpectedArrayOnNonEmptyCollection() {
+        let sut = makeSUT(resources: ["recipes": [1,2]])
+        let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
+        let response = sut.parse(request)
+        let expectedResponse = Response(
+            statusCode: 200,
+            rawBody: "[1,2]",
+            contentLength: 2
+        )
+        
+        expectNoDifference(response, expectedResponse)
+    }
+
 }
 
 // MARK: - Helpers
