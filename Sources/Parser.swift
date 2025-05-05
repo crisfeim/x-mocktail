@@ -269,31 +269,7 @@ extension Request {
 }
 
 
-extension String {
-    func contentLenght() -> Int {
-        data(using: .utf8)?.count ?? count
-    }
-    
-    func removingBreaklines() -> String {
-        self.replacingOccurrences(of: "\n", with: "")
-    }
-    
-    func removingSpaces() -> String {
-        self.replacingOccurrences(of: " ", with: "")
-    }
-    
-    fileprivate func trimInitialAndLastSlashes() -> String {
-        var copy = self
-        if copy.first == "/" {
-            copy.removeFirst()
-        }
-        if copy.last == "/" {
-            copy.removeLast()
-        }
-        
-        return copy
-    }
-}
+
 
 fileprivate extension Array {
     func get(at index: Int) -> Element? {
