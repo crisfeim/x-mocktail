@@ -5,7 +5,7 @@ import CustomDump
 import MockTail
 
 
-final class Tests: XCTestCase {
+final class ParserTests: XCTestCase {
     func test_parser_delivers405OnUnsupportedMethod() {
         let sut = makeSUT()
         let request = Request(headers: "Unsupported /recipes HTTP/1.1\nHost: localhost")
@@ -15,7 +15,7 @@ final class Tests: XCTestCase {
 }
 
 // MARK: - Common
-extension Tests {
+extension ParserTests {
     func test_parser_delivers400ResponseOnEmptyHeaders() {
         let sut = makeSUT()
         let request = Request(headers: "")
@@ -157,70 +157,9 @@ extension Tests {
     }
 }
 
-// MARK: - GET
-extension Tests {
-    
-    func test_parser_delivers200GOnGETExistingCollection() {
-        let sut = makeSUT(collections: ["recipes": []])
-        let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 200)
-    }
-    
-    
-    func test_parser_delivers200OnGETExistingCollectionWithaTrailingSlash() {
-        let sut = makeSUT(collections: ["recipes": []])
-        let request = Request(headers: "GET /recipes/ HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 200)
-    }
-    
-    func test_parser_deliversEmptyJSONArrayOnGETEmptyCollection() {
-        let sut = makeSUT(collections: ["recipes": []])
-        let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 200,
-            rawBody: "[]",
-            contentLength: 2
-        )
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
-    func test_parser_deliversExpectedArrayOnNonGETEmptyCollection() {
-        let item1 = ["id": 1]
-        let item2 = ["id": 2]
-        let sut = makeSUT(collections: ["recipes": [item1, item2]])
-        let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 200,
-            rawBody: #"[{"id":1},{"id":2}]"#,
-            contentLength: 19
-        )
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
-    func test_parser_deliversExpectedItemOnGETExistentItem() {
-        let item = ["id": "1"]
-        let sut = makeSUT(collections: ["recipes": [item]])
-        let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 200,
-            rawBody: #"{"id":"1"}"#,
-            contentLength: 10
-        )
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
-}
 
 // MARK: - DELETE
-extension Tests {
+extension ParserTests {
     func test_parse_delivers404OnNonExistentItemDeletion() {
         let sut = makeSUT()
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
@@ -242,7 +181,7 @@ extension Tests {
 }
 
 // MARK: - POST
-extension Tests {
+extension ParserTests {
     
     func test_parse_delivers400OnPOSTWithInvalidJSONBody() {
         let sut = makeSUT(collections: ["recipes": [["id": 1]]])
@@ -298,7 +237,7 @@ extension Tests {
 }
    
 // MARK: - PUT
-extension Tests {
+extension ParserTests {
     
     func test_parse_delivers200OnPUTNonExistingResource() {
         XCTExpectFailure {
@@ -356,7 +295,7 @@ extension Tests {
 }
 
 // MARK: - Patch
-extension Tests {
+extension ParserTests {
     
     func test_parse_delivers404OnPATCHNonExistentResource() {
         let sut = makeSUT(collections: ["recipes": []])
@@ -405,7 +344,7 @@ extension Tests {
 
 
 // MARK: - Helpers
-private extension Tests {
+extension ParserTests {
     func makeSUT(collections: [String: JSON] = [:], idGenerator: @escaping () -> String = defaultGenrator, ) -> Parser {
         Parser(collections: collections, idGenerator: idGenerator)
     }
