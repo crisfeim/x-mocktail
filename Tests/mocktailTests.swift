@@ -77,6 +77,10 @@ struct Parser {
     }
     
     private func handlePOST(_ request: Request, on collection: String) -> Response {
+        guard let _ = request.contentType else {
+            return Response(statusCode: 415)
+        }
+        
         if let item = request.body {
             var jsonItem: JSONItem? = try? JSONSerialization.jsonObject(with: item.data(using: .utf8)!, options: []) as? JSONItem
             let hasID = jsonItem?.keys.contains("id") ?? false
@@ -218,6 +222,17 @@ private extension Request {
     
     func type() -> RequestType {
         RequestType(urlComponents())
+    }
+    
+    var contentType: String? {
+        for line in requestHeaders() {
+            if line.lowercased().starts(with: "content-type:") {
+                return line
+                    .dropFirst("content-type:".count)
+                    .trimmingCharacters(in: .whitespaces)
+            }
+        }
+        return nil
     }
 }
 
@@ -453,7 +468,7 @@ final class Tests: XCTestCase {
     func test_parse_delivers201OnValidJSON() throws {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
-            headers: "POST /recipes HTTP/1.1\nHost: localhost",
+            headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/freestyle",
             body: #"{"title":"Fried chicken"}"#
         )
         let response = sut.parse(request)
@@ -461,17 +476,20 @@ final class Tests: XCTestCase {
         
         expectNoDifference(response.statusCode, expectedResponse.statusCode)
         expectNoDifference(response.headers, expectedResponse.headers)
+       
+        let responseBody = try XCTUnwrap(response.rawBody)
+        let expectedBody = try XCTUnwrap(expectedResponse.rawBody)
         
         expectNoDifference(
-            try XCTUnwrap(nsDictionary(from: response.rawBody!)),
-            try XCTUnwrap(nsDictionary(from: expectedResponse.rawBody!))
+            try XCTUnwrap(nsDictionary(from: responseBody)),
+            try XCTUnwrap(nsDictionary(from: expectedBody))
         )
     }
     
     func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
         let sut = makeSUT(resources: ["recipes": []])
         let request = Request(
-            headers: "POST /recipes HTTP/1.1\nHost: localhost",
+            headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/freestyle",
             body: #"{"id": 1,"title":"Fried chicken"}"#
         )
         
