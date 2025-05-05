@@ -14,7 +14,7 @@ final class Tests: XCTestCase {
     }
 }
 
-// MARK: - Common to all HTTP verbs
+// MARK: - Common
 extension Tests {
     func test_parser_delivers400ResponseOnEmptyHeaders() {
         let sut = makeSUT()
@@ -76,6 +76,49 @@ extension Tests {
         let response = sut.parse(request)
         expectNoDifference(response.statusCode, 404)
     }
+    
+    func test_parse_delivers415OnPayloadRequiredVerbsMissingContentTypeHeader() {
+        let sut = makeSUT(resources: ["recipes": []])
+        
+        ["POST", "PATCH", "PUT"].forEach { verb in
+            let request = Request(headers: "\(verb) /recipes HTTP/1.1\nHost: localhost")
+            let response = sut.parse(request)
+            let expectedResponse = Response(statusCode: 415)
+            
+            
+            expectNoDifference(response, expectedResponse, "Failed on \(verb)")
+        }
+    }
+    
+    func test_parse_delivers415OnPayloadRequiredVerbsTUnsupportedMediaType() {
+        let sut = makeSUT(resources: ["recipes": []])
+        
+        ["POST", "PATCH", "PUT"].forEach { verb in
+            let request = Request(headers: "POST /recipes\nContent-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
+            let response = sut.parse(request)
+            let expectedResponse = Response(statusCode: 415)
+            
+            expectNoDifference(response, expectedResponse, "Failed on \(verb)")
+        }
+    }
+    
+    func test_parse_delivers400OnPayloadRequiredVerbsWithInvalidJSONBody() {
+        let sut = makeSUT(resources: ["recipes": []])
+        let request = Request(
+            headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
+            body: "invalid json"
+        )
+        
+        ["POST", "PATCH", "PUT"].forEach { verb in
+            
+            let response = sut.parse(request)
+            let expectedResponse = Response(statusCode: 400)
+            
+            expectNoDifference(response, expectedResponse, "Failed on \(verb)")
+        }
+    }
+    
+    
 }
 
 // MARK: - GET
@@ -165,36 +208,6 @@ extension Tests {
 
 // MARK: - POST
 extension Tests {
-    func test_parse_delivers415OnPOSTMissingContentTypeHeader() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "POST /recipes HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 415)
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
-    func test_parse_delivers415OnPOSTUnsupportedMediaType() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "POST /recipes\nContent-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 415)
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
-    func test_parse_delivers400OnPOSTWithInvalidJSONBody() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(
-            headers: "POST /recipes\nContent-Type: application/json\nHost: localhost",
-            body: "invalid json"
-        )
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        
-        expectNoDifference(response, expectedResponse)
-    }
     
     func test_parse_delivers400OnPOSTWithEmptyBody() {
         let sut = makeSUT(resources: ["recipes": []])
@@ -270,37 +283,6 @@ extension Tests {
    
 // MARK: - PUT
 extension Tests {
-    func test_parse_delivers415OnPUTMissingContentTypeHeader() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "PUT /recipes HTTP/1.1\nHost: localhost")
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 415)
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
-    func test_parse_delivers415OnPUTUnsupportedMediaType() {
-        let sut = makeSUT(resources: ["recipes": []])
-        let request = Request(headers: "PUT /recipes\nContent-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 415)
-        
-        expectNoDifference(response, expectedResponse)
-    }
-    
-    func test_parse_delivers400OnPUTWithInvalidJSONBody() {
-        let item = ["id": 1]
-        let sut = makeSUT(resources: ["recipes": [item]])
-        let request = Request(
-            headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-            body: "not valid json"
-        )
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        expectNoDifference(response, expectedResponse)
-    }
     
     func test_parse_delivers400OnPUTWithEmptyJSON() {
         let item = ["id": 1]
@@ -386,29 +368,6 @@ extension Tests {
 
 // MARK: - Patch
 extension Tests {
-    func test_parse_delivers415OnPATCHMissingContentTypeHeader() {
-        let sut = makeSUT(resources: ["recipes": [["id": 1]]])
-        let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        expectNoDifference(response, Response(statusCode: 415))
-    }
-
-    func test_parse_delivers415OnPATCHUnsupportedMediaType() {
-        let sut = makeSUT(resources: ["recipes": [["id": 1]]])
-        let request = Request(headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/weird")
-        let response = sut.parse(request)
-        expectNoDifference(response, Response(statusCode: 415))
-    }
-
-    func test_parse_delivers400OnPATCHWithInvalidJSONBody() {
-        let sut = makeSUT(resources: ["recipes": [["id": 1]]])
-        let request = Request(
-            headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json",
-            body: "not a json"
-        )
-        let response = sut.parse(request)
-        expectNoDifference(response, Response(statusCode: 400))
-    }
     
     func test_parse_delivers400OnPATCHWithEmptyJSON() {
         let item = ["id": 1]
