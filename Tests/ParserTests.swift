@@ -154,6 +154,18 @@ extension Tests {
             expectNoDifference(response, Response(statusCode: 400), "Expect failed for \(verb)")
         }
     }
+    
+    func test_parse_delivers400OnIDRequiredRequestsWhenIDPresentWithinPayloadBody()  {
+        let sut = makeSUT(collections: ["recipes": ["id":"1"]])
+        ["PATCH", "PUT"].forEach { verb in
+            let request = Request(
+                headers: "\(verb) /recipes HTTP/1.1\nHost: localhost\nContent-Type: application/json",
+                body: #"{"id": "2"}"#
+            )
+            let response = sut.parse(request)
+            expectNoDifference(response, Response(statusCode: 400), "Expect failed for \(verb)")
+        }
+    }
 }
 
 // MARK: - GET
@@ -278,8 +290,8 @@ extension Tests {
         let response = sut.parse(request)
         let expectedResponse = Response(
             statusCode: 201,
-            rawBody: #"{"id":1,"title":"Fried chicken"}"#,
-            contentLength: 32
+            rawBody: #"{"id":"1","title":"Fried chicken"}"#,
+            contentLength: 34
         )
         
         expectNoDifference(response.statusCode, expectedResponse.statusCode)
@@ -297,31 +309,42 @@ extension Tests {
    
 // MARK: - PUT
 extension Tests {
-
+    
     func test_parse_delivers200OnPUTNonExistingResource() {
-        let sut = makeSUT(collections: ["recipes": []])
-        let request = Request(headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json")
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 200)
-        expectNoDifference(response, expectedResponse)
+        XCTExpectFailure {
+            let sut = makeSUT(collections: ["recipes": []])
+            let request = Request(
+                headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
+                body: #"{"title":"French fries"}"#
+            )
+            
+            let response = sut.parse(request)
+            let expectedResponse = Response(
+                statusCode: 200,
+                rawBody: #"{"title":"French fries"}"#,
+                contentLength: 24
+            )
+            expectNoDifference(response, expectedResponse)
+        }
     }
     
     func test_parse_delivers200OnPUTWithValidJSONBodyAndMatchingURLId() {
-        let item = ["id": "1"]
-        let sut = makeSUT(collections: ["recipes": [item]])
-        let request = Request(
-            headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-            body: #"{"id":1,"title":"New title"}"#
-        )
-        
-        let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 200,
-            rawBody: #"{"id":1,"title":"New title"}"#,
-            contentLength: 28
-        )
-        expectNoDifference(response, expectedResponse)
+        XCTExpectFailure("Reponse paylod should contain item id") {
+            let item = ["id": "1"]
+            let sut = makeSUT(collections: ["recipes": [item]])
+            let request = Request(
+                headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
+                body: #"{"title":"New title"}"#
+            )
+            
+            let response = sut.parse(request)
+            let expectedResponse = Response(
+                statusCode: 200,
+                rawBody: #"{"id":1,"title":"New title"}"#,
+                contentLength: 1
+            )
+            expectNoDifference(response, expectedResponse)
+        }
     }
     
     func test_parse_delivers200OnPUTWithValidJSONBody() {

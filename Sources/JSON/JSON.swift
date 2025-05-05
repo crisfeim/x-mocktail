@@ -14,4 +14,10 @@ public extension JSONItem {
      func getId() -> String? {
         self["id"] as? String
     }
+    
+    func applyPatch(_ patch: JSONItem) -> JSONItem {
+        mutate(self, withMap: {
+            for (key, value) in patch { $0[key] = value }
+        })
+    }
 }

@@ -23,6 +23,18 @@ extension Request {
         urlComponents().get(at: 1)
     }
     
+    func payloadAsJSONItem() -> JSONItem? {
+        JSONUtils.jsonItem(from: body ?? "")
+    }
+    
+    func payloadJSONHasID() -> Bool {
+        payloadAsJSONItem()?.keys.contains("id") ?? false
+    }
+    
+    func payloadIsValidNonEmptyJSON() -> Bool {
+        JSONUtils.isValidNonEmptyJSON(body)
+    }
+    
     func collectionName() -> String? {
         urlComponents().first
     }
