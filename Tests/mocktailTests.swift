@@ -4,21 +4,7 @@ import XCTest
 import CustomDump
 import MockTail
 
-typealias JSON = Any
-typealias JSONItem = [String: JSON]
-typealias JSONArray = [JSONItem]
 
-extension JSONArray {
-    func getItem(with id: Int) -> JSONItem? {
-        self.first(where: { $0.getId() == id })
-    }
-}
-
-extension JSONItem {
-    func getId() -> Int? {
-        self["id"] as? Int
-    }
-}
 
 struct Parser {
     let resources: [String: JSON]
