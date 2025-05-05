@@ -33,12 +33,13 @@ enum HeadersValidator {
         
         if [Request.HTTPVerb.DELETE, .PATCH].contains(request.method()) {
             
-         guard let id = request.type().id,
-               let _ = getItem(withId: id, on: collectionName, collections: collections) else {
+            guard let id = request.type().id else {
+                return .failure(.badRequest)
+            }
+               guard let _ = getItem(withId: id, on: collectionName, collections: collections) else {
              return .failure(.notFound)
          }
         }
-        
         
         return .success((method, collectionName))
     }
