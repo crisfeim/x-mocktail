@@ -77,7 +77,7 @@ extension Tests {
         expectNoDifference(response.statusCode, 404)
     }
     
-    func test_parse_delivers415OnPayloadRequiredVerbsMissingContentTypeHeader() {
+    func test_parse_delivers415OnPayloadRequiredRequestsMissingContentTypeHeader() {
         let sut = makeSUT(resources: ["recipes": []])
         
         ["POST", "PATCH", "PUT"].forEach { verb in
@@ -90,7 +90,7 @@ extension Tests {
         }
     }
     
-    func test_parse_delivers415OnPayloadRequiredVerbsUnsupportedMediaType() {
+    func test_parse_delivers415OnPayloadRequiredRequestsUnsupportedMediaType() {
         let sut = makeSUT(resources: ["recipes": []])
         
         ["POST", "PATCH", "PUT"].forEach { verb in
@@ -102,7 +102,7 @@ extension Tests {
         }
     }
  
-    func test_parse_delivers400OnPayloadAndIdRequiredVerbsWithInvalidJSONBody() {
+    func test_parse_delivers400OnPayloadAndIDRequiredRequestsWithInvalidJSONBody() {
         let sut = makeSUT(resources: ["recipes": [["id": "1"]]])
         
         ["PATCH", "PUT"].forEach { verb in
@@ -117,7 +117,7 @@ extension Tests {
         }
     }
     
-    func test_parse_delivers400OnPayloadRequiredVerbsWithEmptyJSON() {
+    func test_parse_delivers400OnPayloadRequiredRequestsWithEmptyJSON() {
         let expectedResponse = Response(statusCode: 400)
         expect(expectedResponse, on: "{}", for: "PATCH")
         expect(expectedResponse, on: "{ }", for: "PATCH")
@@ -129,7 +129,7 @@ extension Tests {
         expect(expectedResponse, on: nil, for: "PUT")
     }
     
-    func test_parse_delivers400OnPayloadAndIdRequiredVerbsWithJSONBodyWithDifferentItemId() {
+    func test_parse_delivers400OnPayloadAndIDRequiredRequestsWithJSONBodyWithDifferentItemId() {
         let item1: JSONItem = ["id": "1", "title": "KFC Chicken"]
         let item2: JSONItem = ["id": "2", "title": "Sushi rolls"]
         let sut = makeSUT(resources: ["recipes": [item1, item2]])
