@@ -22,7 +22,7 @@ struct HeadersValidator {
             return StatusCode.badRequest
         }
         
-        guard let _ = request.method() else {
+        guard let _ = request.httpMethod() else {
             return StatusCode.unsupportedMethod
         }
         

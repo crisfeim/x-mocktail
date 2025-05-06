@@ -48,7 +48,7 @@ extension Request {
         urlComponents().first
     }
     
-    enum HTTPVerb: String {
+    enum HTTPMethod: String {
         case GET
         case POST
         case DELETE
@@ -56,44 +56,44 @@ extension Request {
         case PATCH
     }
     
-    func method() -> HTTPVerb? {
+    func httpMethod() -> HTTPMethod? {
         guard let verb = requestHeaders().first?.components(separatedBy: " ").first else {
             return nil
         }
-        return HTTPVerb(rawValue: verb)
+        return HTTPMethod(rawValue: verb)
     }
     
     func isPayloadRequired() -> Bool {
-        [HTTPVerb.PUT, .PATCH, .POST].contains(method())
+        [HTTPMethod.PUT, .PATCH, .POST].contains(httpMethod())
     }
     
     func allItems() -> Bool {
         urlComponents().count == 1
     }
     
-    enum RequestType {
+    enum ResourceRoute {
         case collection(name: String)
-        case resource(id: String, collectionName: String)
-        case nestedSubroute
+        case item(id: String, collectionName: String)
+        case subroute
         
         init(_ urlComponents: [String]) {
             switch urlComponents.count {
             case 1: self = .collection(name: urlComponents[0])
-            case 2: self = .resource(id: urlComponents[1], collectionName: urlComponents[0])
-            default: self = .nestedSubroute
+            case 2: self = .item(id: urlComponents[1], collectionName: urlComponents[0])
+            default: self = .subroute
             }
         }
         
         var id: String? {
-            if case let .resource(id, _) = self {
+            if case let .item(id, _) = self {
                 return id
             }
             return nil
         }
     }
     
-    func route() -> RequestType {
-        RequestType(urlComponents())
+    func route() -> ResourceRoute {
+        ResourceRoute(urlComponents())
     }
     
     func hasWrongOrMissingContentType() -> Bool {

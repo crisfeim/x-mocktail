@@ -8,7 +8,7 @@ struct Router {
     let collections: [String: JSON]
     let idGenerator: () -> String
     func handleRequest() -> Response {
-        switch request.method() {
+        switch request.httpMethod() {
         case
                 .PUT   where request.payloadIsInvalidOrEmptyJSON(),
                 .POST  where request.payloadIsInvalidOrEmptyJSON(),
@@ -34,16 +34,14 @@ struct Router {
     
     private func handleGET() -> Response {
         switch request.route() {
-        case let .resource(id, collection) where !itemExists(id, collection):
+        case let .item(id, collection) where !itemExists(id, collection):
             return .notFound
         case let .collection(name) where !collectionExists(name):
             return .notFound
         case let .collection(name):
-            let collection = collections[name].flatMap(JSONUtils.jsonToString)
-            return .OK(collection)
-        case let .resource(id, collection) where itemExists(id, collection):
-            let item = jsonArray(collection)?.getItem(with: id).flatMap(JSONUtils.jsonItemToString)
-            return .OK(item)
+            return .OK(collections[name] | JSONUtils.jsonToString)
+        case let .item(id, collection) where itemExists(id, collection):
+            return .OK(getItem(id, on: collection) | JSONUtils.jsonItemToString)
             
         default: return .badRequest
         }
@@ -51,22 +49,22 @@ struct Router {
     
     private func handleDELETE() -> Response {
         switch request.route() {
-        case .collection, .nestedSubroute:
+        case .collection, .subroute:
             return .badRequest
-        case let .resource(id, collection) where !itemExists(id, collection):
+        case let .item(id, collection) where !itemExists(id, collection):
             return .notFound
-        case .resource:
+        case .item:
             return .empty
         }
     }
     
     private func handlePUT() -> Response {
         switch request.route() {
-        case let .resource(id, collection) where !itemExists(id, collection):
+        case let .item(id, collection) where !itemExists(id, collection):
             return .OK
-        case .resource where request.body.isEmpty:
+        case .item where request.body.isEmpty:
             return .badRequest
-        case .resource where request.payloadIsValidNonEmptyJSON():
+        case .item where request.payloadIsValidNonEmptyJSON():
             return .OK(request.body)
         default:
             return .badRequest
@@ -75,7 +73,7 @@ struct Router {
     
     private func handlePOST() -> Response {
         switch request.route() {
-        case .resource: return .badRequest
+        case .item: return .badRequest
         case let .collection(name) where !collectionExists(name):
             return .notFound
         case .collection:
@@ -87,11 +85,11 @@ struct Router {
     
     private func handlePATCH() -> Response {
         switch request.route() {
-        case let .resource(id, collection) where !itemExists(id, collection):
+        case let .item(id, collection) where !itemExists(id, collection):
             return .notFound
-        case let .resource(id, collection):
+        case let .item(id, collection):
             let patch = request.payloadAsJSONItem()!
-            let item = getItem(withId: id, on: collection)!
+            let item = getItem(id, on: collection)!
             
             let patched = item.applyPatch(patch) | JSONUtils.jsonToString
             return .OK(patched)
@@ -100,7 +98,7 @@ struct Router {
         }
     }
     
-    private func getItem(withId id: String, on collection: String) -> JSONItem? {
+    private func getItem(_ id: String, on collection: String) -> JSONItem? {
         let items = collections[collection] as? JSONArray
         let item = items?.getItem(with: id)
         return item
