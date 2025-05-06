@@ -5,7 +5,7 @@ import CustomDump
 // MARK: - GET
 extension ParserTests {
     
-    func test_parser_delivers200GOnGETExistingCollection() {
+    func test_parser_delivers200OnGETExistingCollection() {
         let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
