@@ -28,10 +28,9 @@ public extension Response {
         self.init(statusCode: statusCode, headers: headers, rawBody: rawBody)
     }
     
-    static let dateFormatter = DateFormatter() * { df in
+    static let dateFormatter = new(DateFormatter()) { df in
         df.dateFormat = "EEE',' dd MMM yyyy HH:mm:ss zzz"
         df.locale = Locale(identifier: "en_US_POSIX")
         df.timeZone = TimeZone(secondsFromGMT: 0)
-        return df
     }
 }
