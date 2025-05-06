@@ -3,13 +3,6 @@
 
 import Foundation
 
-enum StatusCode {
-    static let notFound = 404
-    static let badRequest = 400
-    static let unsupportedMethod = 405
-    static let missingOrWrongMediaType = 415
-}
-
 struct HeadersValidator {
     
     let request: Request
@@ -19,17 +12,17 @@ struct HeadersValidator {
     
     var errorCode: Result {
         guard request.headers.contains("Host")  else {
-            return StatusCode.badRequest
+            return Response.badRequest.statusCode
         }
         
         guard let _ = request.httpMethod() else {
-            return StatusCode.unsupportedMethod
+            return Response.unsopportedMethod.statusCode
         }
         
         guard request.hasWrongOrMissingContentType() && request.isPayloadRequired() else {
                 return nil
         }
 
-        return StatusCode.missingOrWrongMediaType
+        return Response.unsupportedMediaType.statusCode
     }
 }
