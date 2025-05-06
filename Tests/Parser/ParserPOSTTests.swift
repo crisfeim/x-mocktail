@@ -15,9 +15,7 @@ extension ParserTests {
             body: "invalid json"
         )
         let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response, .badRequest)
     }
     
     func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
@@ -28,9 +26,7 @@ extension ParserTests {
         )
         
         let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response, .badRequest)
     }
     
     func test_parse_delivers201OnPOSTWithValidJSONBody() throws {
@@ -41,11 +37,7 @@ extension ParserTests {
             body: #"{"title":"Fried chicken"}"#
         )
         let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 201,
-            rawBody: "{\"id\":\"\(newId)\",\"title\":\"Fried chicken\"}",
-            contentLength: 69
-        )
+        let expectedResponse = Response.created("{\"id\":\"\(newId)\",\"title\":\"Fried chicken\"}")
         
         expectNoDifference(response.statusCode, expectedResponse.statusCode)
         expectNoDifference(response.headers, expectedResponse.headers)

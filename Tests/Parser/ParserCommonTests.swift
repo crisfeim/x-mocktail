@@ -10,7 +10,7 @@ final class ParserTests: XCTestCase {
         let sut = makeSUT()
         let request = Request(headers: "Unsupported /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 405)
+        expectNoDifference(response, .unsopportedMethod)
     }
 }
 
@@ -20,49 +20,49 @@ extension ParserTests {
         let sut = makeSUT()
         let request = Request(headers: "")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 400)
+        expectNoDifference(response, .badRequest)
     }
     
     func test_parser_delivers400OnMalformedHeaders() {
         let sut = makeSUT()
         let request = Request(headers: "GETHTTP/1.1")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 400)
+        expectNoDifference(response, .badRequest)
     }
     
     func test_parser_delivers400OnMissingHostHeader() {
         let sut = makeSUT()
         let request = Request(headers: "GET /recipes HTTP/1.1")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 400)
+        expectNoDifference(response, .badRequest)
     }
     
     func test_parser_delivers404OnNonExistentCollection() {
         let sut = makeSUT()
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 404)
+        expectNoDifference(response, .notFound)
     }
     
     func test_parser_delivers404OnDELETEMalformedId() {
         let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "DELETE /recipes/abc HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 404)
+        expectNoDifference(response, .notFound)
     }
     
     func test_parser_delivers404OnNonExistentResource() {
         let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "GET /recipes/2 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 404)
+        expectNoDifference(response, .notFound)
     }
     
     func test_parser_delivers400OnUnknownSubroute() {
         let sut = makeSUT(collections: ["recipes": [1]])
         let request = Request(headers: "GET /recipes/1/helloworld HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 400)
+        expectNoDifference(response, .badRequest)
     }
 
     func test_parse_delivers415OnPayloadRequiredRequestsMissingContentTypeHeader() {
@@ -71,10 +71,8 @@ extension ParserTests {
         ["POST", "PATCH", "PUT"].forEach { verb in
             let request = Request(headers: "\(verb) /recipes HTTP/1.1\nHost: localhost")
             let response = sut.parse(request)
-            let expectedResponse = Response(statusCode: 415)
             
-            
-            expectNoDifference(response, expectedResponse, "Failed on \(verb)")
+            expectNoDifference(response, .unsupportedMediaType, "Failed on \(verb)")
         }
     }
     
@@ -84,9 +82,8 @@ extension ParserTests {
         ["POST", "PATCH", "PUT"].forEach { verb in
             let request = Request(headers: "\(verb) /recipes\nContent-Type: \(anyNonJSONMediaType()) HTTP/1.1\nHost: localhost")
             let response = sut.parse(request)
-            let expectedResponse = Response(statusCode: 415)
             
-            expectNoDifference(response, expectedResponse, "Failed on \(verb)")
+            expectNoDifference(response, .unsupportedMediaType, "Failed on \(verb)")
         }
     }
  
@@ -99,22 +96,20 @@ extension ParserTests {
                 body: "invalid json"
             )
             let response = sut.parse(request)
-            let expectedResponse = Response(statusCode: 400)
             
-            expectNoDifference(response, expectedResponse, "Failed on \(verb)")
+            expectNoDifference(response, .badRequest, "Failed on \(verb)")
         }
     }
     
     func test_parse_delivers400OnPayloadRequiredRequestsWithEmptyJSON() {
-        let expectedResponse = Response(statusCode: 400)
-        expect(expectedResponse, on: "{}", for: "PATCH")
-        expect(expectedResponse, on: "{ }", for: "PATCH")
-        expect(expectedResponse, on: "{\n}", for: "PATCH")
-        expect(expectedResponse, on: nil, for: "PATCH")
-        expect(expectedResponse, on: "{}", for: "PUT")
-        expect(expectedResponse, on: "{ }", for: "PUT")
-        expect(expectedResponse, on: "{\n}", for: "PUT")
-        expect(expectedResponse, on: nil, for: "PUT")
+        expect(.badRequest, on: "{}", for: "PATCH")
+        expect(.badRequest, on: "{ }", for: "PATCH")
+        expect(.badRequest, on: "{\n}", for: "PATCH")
+        expect(.badRequest, on: nil, for: "PATCH")
+        expect(.badRequest, on: "{}", for: "PUT")
+        expect(.badRequest, on: "{ }", for: "PUT")
+        expect(.badRequest, on: "{\n}", for: "PUT")
+        expect(.badRequest, on: nil, for: "PUT")
     }
     
     func test_parse_delivers400OnPayloadAndIDRequiredRequestsWithJSONBodyWithDifferentItemId() {
@@ -129,9 +124,7 @@ extension ParserTests {
             )
             
             let response = sut.parse(request)
-            let expectedResponse = Response(statusCode: 400)
-            
-            expectNoDifference(response, expectedResponse)
+            expectNoDifference(response, .badRequest)
         }
     }
     
@@ -140,7 +133,7 @@ extension ParserTests {
         ["DELETE", "PATCH", "PUT"].forEach { verb in
             let request = Request(headers: "\(verb) /recipes HTTP/1.1\nHost: localhost\nContent-Type: application/json", body: "any payload")
             let response = sut.parse(request)
-            expectNoDifference(response, Response(statusCode: 400), "Expect failed for \(verb)")
+            expectNoDifference(response, .badRequest, "Expect failed for \(verb)")
         }
     }
     
@@ -152,7 +145,7 @@ extension ParserTests {
                 body: #"{"id": "2"}"#
             )
             let response = sut.parse(request)
-            expectNoDifference(response, Response(statusCode: 400), "Expect failed for \(verb)")
+            expectNoDifference(response, .badRequest, "Expect failed for \(verb)")
         }
     }
 }

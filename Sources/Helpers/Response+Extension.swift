@@ -3,11 +3,13 @@
 
 import Foundation
 
-extension Response {
+public extension Response {
     nonisolated(unsafe) static let badRequest = Response(statusCode: 400)
     nonisolated(unsafe) static let notFound = Response(statusCode: 404)
     nonisolated(unsafe) static let empty = Response(statusCode: 204)
     nonisolated(unsafe) static let OK = Response(statusCode: 200)
+    nonisolated(unsafe) static let unsopportedMethod = Response(statusCode: 405)
+    nonisolated(unsafe) static let unsupportedMediaType = Response(statusCode: 415)
     
     static func created(_ rawBody: String?) -> Response {
         Response(statusCode: 201, rawBody: rawBody, contentLength: rawBody?.contentLenght())

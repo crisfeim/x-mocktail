@@ -16,12 +16,7 @@ extension ParserTests {
             )
             
             let response = sut.parse(request)
-            let expectedResponse = Response(
-                statusCode: 200,
-                rawBody: #"{"title":"French fries"}"#,
-                contentLength: 24
-            )
-            expectNoDifference(response, expectedResponse)
+            expectNoDifference(response, .OK(#"{"title":"French fries"}"#))
         }
     }
     
@@ -35,12 +30,7 @@ extension ParserTests {
             )
             
             let response = sut.parse(request)
-            let expectedResponse = Response(
-                statusCode: 200,
-                rawBody: #"{"id":1,"title":"New title"}"#,
-                contentLength: 1
-            )
-            expectNoDifference(response, expectedResponse)
+            expectNoDifference(response, .OK(#"{"id":1,"title":"New title"}"#))
         }
     }
     
@@ -53,12 +43,7 @@ extension ParserTests {
         )
         
         let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 200,
-            rawBody: #"{"title":"New title"}"#,
-            contentLength: 21
-        )
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response, .OK(#"{"title":"New title"}"#))
     }
 }
 

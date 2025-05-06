@@ -10,9 +10,8 @@ extension ParserTests {
         let sut = makeSUT()
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 404)
         
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response, .notFound)
     }
     
     func test_parse_delivers204OnSuccessfulItemDeletion() {
@@ -20,8 +19,7 @@ extension ParserTests {
         let sut = makeSUT(collections: ["recipes": [item]])
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 204)
         
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response, .empty)
     }
 }

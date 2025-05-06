@@ -24,13 +24,7 @@ extension ParserTests {
         let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 200,
-            rawBody: "[]",
-            contentLength: 2
-        )
-        
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response, .OK("[]"))
     }
     
     func test_parser_deliversExpectedArrayOnNonGETEmptyCollection() {
@@ -39,13 +33,8 @@ extension ParserTests {
         let sut = makeSUT(collections: ["recipes": [item1, item2]])
         let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 200,
-            rawBody: #"[{"id":1},{"id":2}]"#,
-            contentLength: 19
-        )
         
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response, .OK(#"[{"id":1},{"id":2}]"#))
     }
     
     func test_parser_deliversExpectedItemOnGETExistentItem() {
@@ -53,12 +42,6 @@ extension ParserTests {
         let sut = makeSUT(collections: ["recipes": [item]])
         let request = Request(headers: "GET /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
-        let expectedResponse = Response(
-            statusCode: 200,
-            rawBody: #"{"id":"1"}"#,
-            contentLength: 10
-        )
-        
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response, .OK(#"{"id":"1"}"#))
     }
 }

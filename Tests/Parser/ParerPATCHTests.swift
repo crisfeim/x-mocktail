@@ -14,7 +14,7 @@ extension ParserTests {
             body: #"{"title":"new-title"}"#
         )
         let response = sut.parse(request)
-        expectNoDifference(response, Response(statusCode: 404))
+        expectNoDifference(response, .notFound)
     }
     
     func test_parse_delivers400OnPATCHWithValidJSONBodyAndMatchingURLId() {
@@ -26,8 +26,7 @@ extension ParserTests {
         )
         
         let response = sut.parse(request)
-        let expectedResponse = Response(statusCode: 400)
-        expectNoDifference(response, expectedResponse)
+        expectNoDifference(response, .badRequest)
     }
 
 
@@ -39,11 +38,7 @@ extension ParserTests {
             body: #"{"title":"New title"}"#
         )
         let response = sut.parse(request)
-        let expected = Response(
-            statusCode: 200,
-            rawBody: #"{"title":"New title","id":"1"}"#,
-            contentLength: 28
-        )
+        let expected = Response.OK(#"{"title":"New title","id":"1"}"#)
         
         expectNoDifference(
             try XCTUnwrap(nsDictionary(from: try XCTUnwrap(response.rawBody))),
