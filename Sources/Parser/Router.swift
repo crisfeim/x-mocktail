@@ -95,8 +95,8 @@ struct Router {
             let jsonItem = request.payloadAsJSONItem() | { $0?["id"] = idGenerator() }
             return Response(
                 statusCode: 201,
-                rawBody: jsonItem.flatMap(JSONUtils.jsonItemToString),
-                contentLength: jsonItem.flatMap(JSONUtils.jsonItemToString)?.contentLenght()
+                rawBody: jsonItem | JSONUtils.jsonItemToString,
+                contentLength: jsonItem | JSONUtils.jsonItemToString | { $0.contentLenght() }
             )
         default: return .badRequest
         }

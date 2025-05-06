@@ -19,3 +19,7 @@ func |<T>(lhs: T, rhs: (inout T) -> Void) -> T {
 func |<A, B>(lhs: A, rhs: (A) -> B) -> B {
     rhs(lhs)
 }
+
+func |<A, B>(lhs: A?, rhs: (A) -> B?) -> B? {
+  lhs.flatMap(rhs)
+}
