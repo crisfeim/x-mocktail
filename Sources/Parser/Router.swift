@@ -61,7 +61,7 @@ struct Router {
     private func handlePUT() -> Response {
         switch request.route() {
         case let .item(id, collection) where !itemExists(id, collection):
-            return .OK
+            return .created(request.body)
         case .item where request.body.isEmpty:
             return .badRequest
         case .item where request.payloadIsValidNonEmptyJSON():

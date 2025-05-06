@@ -7,17 +7,15 @@ import CustomDump
 // MARK: - PUT
 extension ParserTests {
     
-    func test_parse_delivers200OnPUTNonExistingResource() {
-        XCTExpectFailure {
-            let sut = makeSUT(collections: ["recipes": []])
-            let request = Request(
-                headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-                body: #"{"title":"French fries"}"#
-            )
-            
-            let response = sut.parse(request)
-            expectNoDifference(response, .OK(#"{"title":"French fries"}"#))
-        }
+    func test_parse_delivers201OnPUTNonExistingResource() {
+        let sut = makeSUT(collections: ["recipes": []])
+        let request = Request(
+            headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
+            body: #"{"title":"French fries"}"#
+        )
+        
+        let response = sut.parse(request)
+        expectNoDifference(response, .created(#"{"title":"French fries"}"#))
     }
     
     func test_parse_delivers200OnPUTWithValidJSONBodyAndMatchingURLId() {
