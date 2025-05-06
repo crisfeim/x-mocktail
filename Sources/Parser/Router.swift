@@ -92,7 +92,7 @@ struct Router {
         case let .collection(name) where !collectionExists(name):
             return Response(statusCode: 404)
         case .collection:
-            let jsonItem = request.payloadAsJSONItem() * { $0?["id"] = idGenerator() }
+            let jsonItem = request.payloadAsJSONItem() | { $0?["id"] = idGenerator() }
             return Response(
                 statusCode: 201,
                 rawBody: jsonItem.flatMap(JSONUtils.jsonItemToString),
@@ -110,7 +110,7 @@ struct Router {
             let patch = request.payloadAsJSONItem()!
             let item = getItem(withId: id, on: collection)!
             
-            let patched = item.applyPatch(patch) * JSONUtils.jsonToString
+            let patched = item.applyPatch(patch) | JSONUtils.jsonToString
             
             return Response(
                 statusCode: 200,

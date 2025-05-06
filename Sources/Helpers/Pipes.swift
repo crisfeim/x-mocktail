@@ -2,13 +2,13 @@
 
 import Foundation
 
-// Less esoteric version of my beloved `asterisk`
+// Less esoteric version of my beloved `pipes` operator
 func new<T>(_ item: T, withMap map: (inout T) -> Void) -> T {
-    item * map
+    item | map
 }
 
 // Returns new instance of object with the `rhs` map applied
-func *<T>(lhs: T, rhs: (inout T) -> Void) -> T {
+func |<T>(lhs: T, rhs: (inout T) -> Void) -> T {
     var copy = lhs
     rhs(&copy)
     return copy
@@ -16,6 +16,6 @@ func *<T>(lhs: T, rhs: (inout T) -> Void) -> T {
 
 // Maps `A` to `B`.
 // Usage: let intAsString = 3 * String.init
-func *<A, B>(lhs: A, rhs: (A) -> B) -> B {
+func |<A, B>(lhs: A, rhs: (A) -> B) -> B {
     rhs(lhs)
 }
