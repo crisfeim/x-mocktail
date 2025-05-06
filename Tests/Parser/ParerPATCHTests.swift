@@ -41,8 +41,8 @@ extension ParserTests {
         let expected = Response.OK(#"{"title":"New title","id":"1"}"#)
         
         expectNoDifference(
-            try XCTUnwrap(nsDictionary(from: try XCTUnwrap(response.rawBody))),
-            try XCTUnwrap(nsDictionary(from: try XCTUnwrap(expected.rawBody)))
+            try XCTUnwrap(response.body()),
+            try XCTUnwrap(expected.body())
         )
     }
 }

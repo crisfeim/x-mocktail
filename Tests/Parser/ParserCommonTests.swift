@@ -150,4 +150,15 @@ extension ParserTests {
     }
 }
 
-
+extension Response {
+    func body() -> NSDictionary? {
+        guard
+            let rawBody,
+            let responseJSON = try? JSONSerialization.jsonObject(with: Data(rawBody.utf8)),
+            let responseDict = responseJSON as? NSDictionary
+        else {
+            return nil
+        }
+        return responseDict
+    }
+}

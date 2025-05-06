@@ -64,8 +64,10 @@ struct Router {
             return .created(request.body)
         case .item where request.body.isEmpty:
             return .badRequest
-        case .item where request.payloadIsValidNonEmptyJSON():
-            return .OK(request.body)
+        case let .item(id, collection) where request.payloadIsValidNonEmptyJSON():
+            let put = JSONUtils.jsonItem(from: request.body)
+            let item = getItem(id, on: collection)
+            return .OK(item?.applyPatch(put!) | JSONUtils.jsonItemToString)
         default:
             return .badRequest
         }

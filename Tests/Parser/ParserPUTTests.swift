@@ -19,17 +19,19 @@ extension ParserTests {
     }
     
     func test_parse_delivers200OnPUTWithValidJSONBodyAndMatchingURLId() {
-        XCTExpectFailure("Reponse paylod should contain item id") {
-            let item = ["id": "1"]
-            let sut = makeSUT(collections: ["recipes": [item]])
-            let request = Request(
-                headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
-                body: #"{"title":"New title"}"#
-            )
-            
-            let response = sut.parse(request)
-            expectNoDifference(response, .OK(#"{"id":1,"title":"New title"}"#))
-        }
+        let item = ["id": "1"]
+        let sut = makeSUT(collections: ["recipes": [item]])
+        let request = Request(
+            headers: "PUT /recipes/1 HTTP/1.1\nHost: localhost\nContent-type: application/json",
+            body: #"{"title":"New title"}"#
+        )
+        
+        let response = sut.parse(request)
+        let expected = Response.OK(#"{"id":"1","title":"New title"}"#)
+        expectNoDifference(
+            response.body(),
+            expected.body()
+        )
     }
     
     func test_parse_delivers200OnPUTWithValidJSONBody() {
@@ -41,7 +43,8 @@ extension ParserTests {
         )
         
         let response = sut.parse(request)
-        expectNoDifference(response, .OK(#"{"title":"New title"}"#))
+        let expected = Response.OK(#"{"id":"1","title":"New title"}"#)
+        expectNoDifference(response.body(), expected.body())
     }
 }
 
