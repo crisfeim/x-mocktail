@@ -7,7 +7,7 @@ import XCTest
 // MARK: - Patch
 extension ParserTests {
     
-    func test_parse_delivers404OnPATCHNonExistentResource() {
+    func test_PATCH_delivers404OnNonExistentResource() {
         let sut = makeSUT(collections: ["recipes": []])
         let request = Request(
             headers: "PATCH /recipes/1 HTTP/1.1\nHost: localhost\nContent-Type: application/json",
@@ -17,7 +17,7 @@ extension ParserTests {
         expectNoDifference(response, .notFound)
     }
     
-    func test_parse_delivers400OnPATCHWithValidJSONBodyAndMatchingURLId() {
+    func test_PATCH_delivers400OnValidJSONBodyAndMatchingURLId() {
         let item = ["id": "1"]
         let sut = makeSUT(collections: ["recipes": [item]])
         let request = Request(
@@ -30,7 +30,7 @@ extension ParserTests {
     }
 
 
-    func test_parse_delivers200OnPATCHWithValidJSONBody() throws {
+    func test_PATCH_delivers200OnValidJSONBody() throws {
         let original: JSONItem = ["id": "1", "title": "Old title"]
         let sut = makeSUT(collections: ["recipes": [original]])
         let request = Request(

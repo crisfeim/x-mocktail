@@ -6,7 +6,7 @@ import XCTest
 
 // MARK: - DELETE
 extension ParserTests {
-    func test_parse_delivers404OnNonExistentItemDeletion() {
+    func test_DELETE_delivers404OnDeleteRequestToAnUnexistentItem() {
         let sut = makeSUT()
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")
         let response = sut.parse(request)
@@ -14,7 +14,7 @@ extension ParserTests {
         expectNoDifference(response, .notFound)
     }
     
-    func test_parse_delivers204OnSuccessfulItemDeletion() {
+    func test_DELETE_delivers204OnSuccessfulItemDeletion() {
         let item = ["id": "1"]
         let sut = makeSUT(collections: ["recipes": [item]])
         let request = Request(headers: "DELETE /recipes/1 HTTP/1.1\nHost: localhost")

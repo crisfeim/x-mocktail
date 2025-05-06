@@ -7,7 +7,7 @@ import XCTest
 // MARK: - POST
 extension ParserTests {
     
-    func test_parse_delivers400OnPOSTWithInvalidJSONBody() {
+    func test_POST_delivers400OnInvalidJSONBody() {
         let sut = makeSUT(collections: ["recipes": [["id": 1]]])
      
         let request = Request(
@@ -18,7 +18,7 @@ extension ParserTests {
         expectNoDifference(response, .badRequest)
     }
     
-    func test_parse_delivers400OnPostWithJSONBodyWithItemId() {
+    func test_POST_delivers400OnJsonBodyWithItemId() {
         let sut = makeSUT(collections: ["recipes": []])
         let request = Request(
             headers: "POST /recipes HTTP/1.1\nHost: localhost\nContent-type: application/json",
@@ -29,7 +29,7 @@ extension ParserTests {
         expectNoDifference(response, .badRequest)
     }
     
-    func test_parse_delivers201OnPOSTWithValidJSONBody() throws {
+    func test_POST_delivers201OnValidJSONBody() throws {
         let newId = UUID().uuidString
         let sut = makeSUT(collections: ["recipes": []], idGenerator: {newId})
         let request = Request(
