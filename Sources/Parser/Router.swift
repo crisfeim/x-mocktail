@@ -35,24 +35,15 @@ struct Router {
     private func handleGET() -> Response {
         switch request.route() {
         case let .resource(id, collection) where !itemExists(id, collection):
-            return Response(statusCode: 404)
+            return .notFound
         case let .collection(name) where !collectionExists(name):
-            return Response(statusCode: 404)
-            
+            return .notFound
         case let .collection(name):
             let collection = collections[name].flatMap(JSONUtils.jsonToString)
-            return Response(
-                statusCode: 200,
-                rawBody: collection,
-                contentLength: collection?.contentLenght()
-            )
+            return .OK(collection)
         case let .resource(id, collection) where itemExists(id, collection):
             let item = jsonArray(collection)?.getItem(with: id).flatMap(JSONUtils.jsonItemToString)
-            return Response(
-                statusCode: 200,
-                rawBody: item,
-                contentLength: item?.contentLenght()
-            )
+            return .OK(item)
             
         default: return .badRequest
         }
@@ -63,24 +54,20 @@ struct Router {
         case .collection, .nestedSubroute:
             return .badRequest
         case let .resource(id, collection) where !itemExists(id, collection):
-            return Response(statusCode: 404)
+            return .notFound
         case .resource:
-            return Response(statusCode: 204)
+            return .empty
         }
     }
     
     private func handlePUT() -> Response {
         switch request.route() {
         case let .resource(id, collection) where !itemExists(id, collection):
-            return Response(statusCode: 200)
+            return .OK
         case .resource where request.body.isEmpty:
             return .badRequest
         case .resource where request.payloadIsValidNonEmptyJSON():
-            return Response(
-                statusCode: 200,
-                rawBody:  request.body,
-                contentLength: request.body.contentLenght()
-            )
+            return .OK(request.body)
         default:
             return .badRequest
         }
@@ -90,14 +77,10 @@ struct Router {
         switch request.route() {
         case .resource: return .badRequest
         case let .collection(name) where !collectionExists(name):
-            return Response(statusCode: 404)
+            return .notFound
         case .collection:
             let jsonItem = request.payloadAsJSONItem() | { $0?["id"] = idGenerator() }
-            return Response(
-                statusCode: 201,
-                rawBody: jsonItem | JSONUtils.jsonItemToString,
-                contentLength: jsonItem | JSONUtils.jsonItemToString | { $0.contentLenght() }
-            )
+            return .created(jsonItem | JSONUtils.jsonItemToString)
         default: return .badRequest
         }
     }
@@ -105,18 +88,13 @@ struct Router {
     private func handlePATCH() -> Response {
         switch request.route() {
         case let .resource(id, collection) where !itemExists(id, collection):
-            return Response(statusCode: 404)
+            return .notFound
         case let .resource(id, collection):
             let patch = request.payloadAsJSONItem()!
             let item = getItem(withId: id, on: collection)!
             
             let patched = item.applyPatch(patch) | JSONUtils.jsonToString
-            
-            return Response(
-                statusCode: 200,
-                rawBody: patched,
-                contentLength: patched?.contentLenght()
-            )
+            return .OK(patched)
         default:
             return .badRequest
         }

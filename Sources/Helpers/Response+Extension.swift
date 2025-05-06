@@ -4,7 +4,18 @@
 import Foundation
 
 extension Response {
-    nonisolated(unsafe) static public let badRequest = Response(statusCode: 400)
+    nonisolated(unsafe) static let badRequest = Response(statusCode: 400)
+    nonisolated(unsafe) static let notFound = Response(statusCode: 404)
+    nonisolated(unsafe) static let empty = Response(statusCode: 204)
+    nonisolated(unsafe) static let OK = Response(statusCode: 200)
+    
+    static func created(_ rawBody: String?) -> Response {
+        Response(statusCode: 201, rawBody: rawBody, contentLength: rawBody?.contentLenght())
+    }
+    
+    static func OK(_ rawBody: String?) -> Response {
+        Response(statusCode: 200, rawBody: rawBody, contentLength: rawBody?.contentLenght())
+    }
 }
 
 public extension Response {
