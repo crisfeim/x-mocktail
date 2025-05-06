@@ -15,9 +15,9 @@ public extension JSONItem {
         self["id"] as? String
     }
     
-    func applyPatch(_ patch: JSONItem) -> JSONItem {
+    func merge(_ item: JSONItem) -> JSONItem {
         new(self) {
-            for (key, value) in patch { $0[key] = value }
+            for (key, value) in item { $0[key] = value }
         }
     }
 }

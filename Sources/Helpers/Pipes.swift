@@ -23,3 +23,10 @@ func |<A, B>(lhs: A, rhs: (A) -> B) -> B {
 func |<A, B>(lhs: A?, rhs: (A) -> B?) -> B? {
   lhs.flatMap(rhs)
 }
+
+func |<A, B>(lhs: A?, rhs: ((A) -> B?)?) -> B? {
+    guard let rhs = rhs else {
+        return nil
+    }
+  return lhs.flatMap(rhs)
+}

@@ -39,9 +39,9 @@ struct Router {
         case let .collection(name) where !collectionExists(name):
             return .notFound
         case let .collection(name):
-            return .OK(collections[name] | JSONUtils.jsonToString)
+            return .OK(collections[name] | JSONCoder.encode)
         case let .item(id, collection) where itemExists(id, collection):
-            return .OK(getItem(id, on: collection) | JSONUtils.jsonItemToString)
+            return .OK(getItem(id, on: collection) | JSONCoder.encode)
             
         default: return .badRequest
         }
@@ -62,12 +62,14 @@ struct Router {
         switch request.route() {
         case let .item(id, collection) where !itemExists(id, collection):
             return .created(request.body)
+        #warning("use JSONValidator instead")
         case .item where request.body.isEmpty:
             return .badRequest
         case let .item(id, collection) where request.payloadIsValidNonEmptyJSON():
-            let put = JSONUtils.jsonItem(from: request.body)
-            let item = getItem(id, on: collection)
-            return .OK(item?.applyPatch(put!) | JSONUtils.jsonItemToString)
+            let put: JSONItem? = JSONCoder.decode(request.body)
+            let existentItem = getItem(id, on: collection)
+            let updated = put | existentItem?.merge
+            return .OK(updated | JSONCoder.encode)
         default:
             return .badRequest
         }
@@ -80,7 +82,7 @@ struct Router {
             return .notFound
         case .collection:
             let jsonItem = request.payloadAsJSONItem() | { $0?["id"] = idGenerator() }
-            return .created(jsonItem | JSONUtils.jsonItemToString)
+            return .created(jsonItem | JSONCoder.encode)
         default: return .badRequest
         }
     }
@@ -93,7 +95,7 @@ struct Router {
             let patch = request.payloadAsJSONItem()!
             let item = getItem(id, on: collection)!
             
-            let patched = item.applyPatch(patch) | JSONUtils.jsonToString
+            let patched = item.merge(patch) | JSONCoder.encode
             return .OK(patched)
         default:
             return .badRequest
@@ -111,7 +113,8 @@ struct Router {
     }
     
     private func containsItemId(_ body: String) -> Bool {
-        JSONUtils.jsonItem(from: body)?.keys.contains("id") ?? false
+        guard let item: JSONItem = JSONCoder.decode(body) else { return false }
+        return item.keys.contains("id") 
     }
     
     private func itemExists(_ id: String, _ collectionName: String) -> Bool {

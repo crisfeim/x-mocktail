@@ -24,7 +24,7 @@ extension Request {
     }
     
     func payloadAsJSONItem() -> JSONItem? {
-        JSONUtils.jsonItem(from: body)
+        JSONCoder.decode(body)
     }
     
     func payloadJSONHasID() -> Bool {
@@ -36,7 +36,8 @@ extension Request {
     }
     
     func payloadIsValidNonEmptyJSON() -> Bool {
-        JSONUtils.isValidNonEmptyJSON(body)
+        JSONValidator.isValidJSON(body) && !JSONValidator
+            .isEmptyJSON(body)
     }
     
     func urlHasNotId() -> Bool {
