@@ -1,5 +1,7 @@
 #  Mocktail 🥤  
 
+![](badge.svg)
+
 > Built with pain, joy, and Swift.  
 
 ![](appicon.png)
