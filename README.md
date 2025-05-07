@@ -2,6 +2,8 @@
 
 > Built with pain, joy, and Swift.  
 
+![](appicon.png)
+
 Mocktail was a personal exploration of REST API request parsing and validation logic in Swift — including full support for GET, POST, PUT, PATCH, DELETE against a JSON snapshot.
 
 ## Why I built it
