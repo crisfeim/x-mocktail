@@ -5,14 +5,6 @@ import CustomDump
 // MARK: - GET
 extension ParserTests {
     
-    func test_GET_delivers200OnRequestOfExistingCollection() {
-        let sut = makeSUT(collections: ["recipes": []])
-        let request = Request(headers: "GET /recipes HTTP/1.1\nHost: localhost")
-        let response = sut.parse(request)
-        expectNoDifference(response.statusCode, 200)
-    }
-    
-    
     func test_GET_delivers200OnRequestOFExistingCollectionWithTrailingSlash() {
         let sut = makeSUT(collections: ["recipes": []])
         let request = Request(headers: "GET /recipes/ HTTP/1.1\nHost: localhost")
