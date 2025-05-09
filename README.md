@@ -22,7 +22,9 @@ The goal was to enable a workflow where a prototype app could include a bundled,
 
 ## 🚧 Status: Archived
 
-The project it's currently paused, in favor of exploring simpler and more pragmatic approaches (like Express + JWT proxying for `json-server`).  
+Currently, only the _parser_ component of the imagined system has been implemented.
+
+The project it's paused, in favor of exploring simpler and more pragmatic approaches (like Express + JWT proxying for `json-server`).  
 
 Basically I realized that wrapping `json-server` behind a simple **JWT-authenticated Express proxy** solves 90% of what I was building here in about **12 lines of JavaScript**.
 
@@ -94,32 +96,32 @@ $ curl localhost:4000/recipes
 
 ```swift
 protocol Server {
-	typealias SendResponse = (Response) -> Void
-	func run(port: Int, onRequest: (Request, SendResponse) -> Void)
+  typealias SendResponse = (Response) -> Void
+  func run(port: Int, onRequest: (Request, SendResponse) -> Void)
 }
 
 protocol Parser {
-	func parse(_ data: Data, request: Request) -> Response
+  func parse(_ data: Data, request: Request) -> Response
 }
 
 protocol Store {
-	func read() -> Data
-	func write(_ data: Data)
+  func read() -> Data
+  func write(_ data: Data)
 }
 
 struct Controller {
-	let server: Server
-	let parser: Parser
-	let store : Store
-	
-	func start() {
-		server.run(port: 4000) { request, sendResponse in
-			let snapshot = store.read()
-			let response = parser.parse(snapshot, request: request)
-			response.is2XX ? store.write(response.data) : ()
-			sendResponse(response)
-		}
-	}
+  let server: Server
+  let parser: Parser
+  let store : Store
+  
+  func start() {
+    server.run(port: 4000) { request, sendResponse in
+      let snapshot = store.read()
+      let response = parser.parse(snapshot, request: request)
+      response.is2XX ? store.write(response.data) : ()
+      sendResponse(response)
+    }
+  }
 }
 ```
 
@@ -136,7 +138,7 @@ At the moment, only the parser component was implemented:
 
 - Parameter filters
 - Nested routing parsing
-- Missing *server and store* components from designed system.
+- Missing *server and store* components from original system design.
 
 ## 📚 Lessons Learned
 
