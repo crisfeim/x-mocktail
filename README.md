@@ -96,8 +96,7 @@ $ curl localhost:4000/recipes
 
 ```swift
 protocol Server {
-  typealias SendResponse = (Response) -> Void
-  func run(port: Int, onRequest: (Request, SendResponse) -> Void)
+  func run(port: Int, onRequest: (Request) -> Response)
 }
 
 protocol Parser {
@@ -115,11 +114,11 @@ struct Controller {
   let store : Store
   
   func start() {
-    server.run(port: 4000) { request, sendResponse in
+    server.run(port: 4000) { request in
       let snapshot = store.read()
       let response = parser.parse(snapshot, request: request)
       response.is2XX ? store.write(response.data) : ()
-      sendResponse(response)
+      return response
     }
   }
 }
